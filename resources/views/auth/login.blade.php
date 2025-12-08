@@ -668,7 +668,7 @@
             <div class="login-content">
                 <!-- Welcome Section -->
                 <div class="welcome-section">
-                    <h1>Welcome back</h1>
+                    <h1>Welcome!</h1>
                     <p>Please sign in to your account</p>
                 </div>
 
