@@ -48,4 +48,48 @@ RUN composer dump-autoload --optimize || true \
     && php artisan view:clear || true \
     && php artisan storage:link || true
 
-CMD ["php-fpm"]
+# Stage 3 - Final (Nginx + PHP-FPM)
+FROM php:8.2-fpm
+
+# Install system dependencies and Nginx
+RUN apt-get update && apt-get install -y \
+    nginx \
+    supervisor \
+    gettext-base \
+    libpq-dev \
+    libonig-dev \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip gd \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Configure PHP-FPM to use Unix socket
+RUN sed -i 's/listen = 127.0.0.1:9000/listen = \/var\/run\/php-fpm.sock/' /usr/local/etc/php-fpm.d/www.conf \
+    && sed -i 's/;listen.owner = www-data/listen.owner = www-data/' /usr/local/etc/php-fpm.d/www.conf \
+    && sed -i 's/;listen.group = www-data/listen.group = www-data/' /usr/local/etc/php-fpm.d/www.conf \
+    && sed -i 's/user = www-data/user = www-data/' /usr/local/etc/php-fpm.d/www.conf \
+    && sed -i 's/group = www-data/group = www-data/' /usr/local/etc/php-fpm.d/www.conf
+
+# Create nginx templates directory and copy configuration
+RUN mkdir -p /etc/nginx/templates
+COPY nginx.conf /etc/nginx/templates/default.conf.template
+
+# Copy supervisor configuration
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Copy startup script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# Copy application from backend stage
+COPY --from=backend --chown=www-data:www-data /var/www /var/www
+
+WORKDIR /var/www
+
+# Expose port (Render will set PORT env var)
+EXPOSE 10000
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
