@@ -66,10 +66,8 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip gd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Configure PHP-FPM to use Unix socket
-RUN sed -i 's/listen = 127.0.0.1:9000/listen = \/var\/run\/php-fpm.sock/' /usr/local/etc/php-fpm.d/www.conf \
-    && sed -i 's/;listen.owner = www-data/listen.owner = www-data/' /usr/local/etc/php-fpm.d/www.conf \
-    && sed -i 's/;listen.group = www-data/listen.group = www-data/' /usr/local/etc/php-fpm.d/www.conf \
+# Configure PHP-FPM to listen on TCP (simpler than Unix socket for Docker)
+RUN sed -i 's/listen = 127.0.0.1:9000/listen = 127.0.0.1:9000/' /usr/local/etc/php-fpm.d/www.conf \
     && sed -i 's/user = www-data/user = www-data/' /usr/local/etc/php-fpm.d/www.conf \
     && sed -i 's/group = www-data/group = www-data/' /usr/local/etc/php-fpm.d/www.conf
 
