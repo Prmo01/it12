@@ -28,7 +28,6 @@ LOG_LEVEL=debug
 #DB_PASSWORD=
 
 
-
 DB_CONNECTION=pgsql
 DB_HOST=ep-ancient-star-a1rc0pwu-pooler.ap-southeast-1.aws.neon.tech
 DB_PORT=5432
