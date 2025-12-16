@@ -23,24 +23,26 @@ class ReportsController extends Controller
     public function inventoryMovement(Request $request)
     {
         $filters = $request->only(['item_id', 'movement_type', 'date_from', 'date_to']);
-        $data = $this->reportService->getInventoryMovementReport($filters);
-
+        
         if ($request->has('export')) {
+            $data = $this->reportService->getInventoryMovementReport($filters, false);
             return $this->exportReport($data, 'inventory_movement', $request->export);
         }
 
+        $data = $this->reportService->getInventoryMovementReport($filters, true);
         return view('reports.inventory_movement', compact('data', 'filters'));
     }
 
     public function purchaseHistory(Request $request)
     {
         $filters = $request->only(['supplier_id', 'status', 'date_from', 'date_to']);
-        $data = $this->reportService->getPurchaseHistoryReport($filters);
-
+        
         if ($request->has('export')) {
+            $data = $this->reportService->getPurchaseHistoryReport($filters, false);
             return $this->exportReport($data, 'purchase_history', $request->export);
         }
 
+        $data = $this->reportService->getPurchaseHistoryReport($filters, true);
         return view('reports.purchase_history', compact('data', 'filters'));
     }
 
@@ -50,11 +52,14 @@ class ReportsController extends Controller
         $data = collect();
         
         if ($request->has('project_id') && $request->project_id) {
-            $data = $this->reportService->getProjectConsumptionReport($request->project_id, $filters);
-        }
-
-        if ($request->has('export') && $data->isNotEmpty()) {
-            return $this->exportReport($data, 'project_consumption', $request->export);
+            if ($request->has('export')) {
+                $data = $this->reportService->getProjectConsumptionReport($request->project_id, $filters, false);
+                if ($data->isNotEmpty()) {
+                    return $this->exportReport($data, 'project_consumption', $request->export);
+                }
+            } else {
+                $data = $this->reportService->getProjectConsumptionReport($request->project_id, $filters, true);
+            }
         }
 
         $projects = \App\Models\Project::orderBy('name')->get();
@@ -64,12 +69,13 @@ class ReportsController extends Controller
     public function supplierPerformance(Request $request)
     {
         $filters = $request->only(['date_from', 'date_to']);
-        $data = $this->reportService->getSupplierPerformanceReport($filters);
-
+        
         if ($request->has('export')) {
+            $data = $this->reportService->getSupplierPerformanceReport($filters, false);
             return $this->exportReport($data, 'supplier_performance', $request->export);
         }
 
+        $data = $this->reportService->getSupplierPerformanceReport($filters, true);
         return view('reports.supplier_performance', compact('data', 'filters'));
     }
 

@@ -468,7 +468,36 @@
         
         container.appendChild(newRow);
         itemIndex++;
+        
+        // Update item options after adding new row
+        updateItemOptions();
     });
+    
+    function updateItemOptions() {
+        // Get all selected item IDs
+        const selectedItems = new Set();
+        document.querySelectorAll('.item-select').forEach(select => {
+            if (select.value) {
+                selectedItems.add(select.value);
+            }
+        });
+        
+        // Update each select to disable already selected items
+        document.querySelectorAll('.item-select').forEach(select => {
+            const currentValue = select.value;
+            Array.from(select.options).forEach(option => {
+                if (option.value && option.value !== currentValue) {
+                    if (selectedItems.has(option.value)) {
+                        option.disabled = true;
+                        option.style.display = 'none';
+                    } else {
+                        option.disabled = false;
+                        option.style.display = '';
+                    }
+                }
+            });
+        });
+    }
     
     function attachItemListeners(row) {
         const itemSelect = row.querySelector('.item-select');
@@ -480,6 +509,27 @@
                 const option = this.options[this.selectedIndex];
                 const stock = parseFloat(option.dataset.stock) || 0;
                 const unit = option.dataset.unit || '';
+                
+                // Check for duplicates
+                const selectedValue = this.value;
+                let isDuplicate = false;
+                document.querySelectorAll('.item-select').forEach(otherSelect => {
+                    if (otherSelect !== this && otherSelect.value === selectedValue) {
+                        isDuplicate = true;
+                    }
+                });
+                
+                if (isDuplicate) {
+                    this.classList.add('is-invalid');
+                    this.value = '';
+                    alert('This item has already been selected. Please choose a different item.');
+                    stockInfo.style.display = 'none';
+                    updateItemOptions();
+                    return;
+                }
+                
+                this.classList.remove('is-invalid');
+                updateItemOptions();
                 
                 if (this.value) {
                     stockInfo.style.display = 'block';
@@ -523,6 +573,9 @@
         attachItemListeners(row);
     });
     
+    // Initialize item options
+    updateItemOptions();
+    
     document.addEventListener('click', function(e) {
         if (e.target.closest('.remove-item')) {
             const container = document.getElementById('items-container');
@@ -532,6 +585,8 @@
                 container.querySelectorAll('.item-row-modern').forEach((row, index) => {
                     row.querySelector('.item-number').textContent = `Item ${index + 1}`;
                 });
+                // Update item options after removing
+                updateItemOptions();
             } else {
                 alert('At least one item is required.');
             }
@@ -547,10 +602,19 @@
         // Validate at least one item has been selected
         const itemSelects = form.querySelectorAll('.item-select');
         let hasValidItem = false;
+        const selectedItems = new Set();
         
         itemSelects.forEach(select => {
             if (select.value) {
                 hasValidItem = true;
+                // Check for duplicates
+                if (selectedItems.has(select.value)) {
+                    e.preventDefault();
+                    select.classList.add('is-invalid');
+                    alert('Duplicate items detected. Each item can only be selected once.');
+                    return false;
+                }
+                selectedItems.add(select.value);
             }
         });
         

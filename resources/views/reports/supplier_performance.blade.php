@@ -105,12 +105,18 @@
             </table>
         </div>
         
+        @if(method_exists($data, 'links'))
+        <div class="d-flex justify-content-end mt-3">
+            {{ $data->withQueryString()->links('pagination::bootstrap-5') }}
+        </div>
+        @endif
+        
         @if($data->isNotEmpty())
         <div class="mt-3 p-3 bg-light rounded">
             <div class="row text-center">
                 <div class="col-md-3">
                     <div class="fw-semibold text-muted">Total Suppliers</div>
-                    <div class="h4 mb-0">{{ $data->count() }}</div>
+                    <div class="h4 mb-0">{{ method_exists($data, 'total') ? $data->total() : $data->count() }}</div>
                 </div>
                 <div class="col-md-3">
                     <div class="fw-semibold text-muted">Total Orders</div>

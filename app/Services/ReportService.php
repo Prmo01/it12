@@ -9,11 +9,12 @@ use App\Models\Supplier;
 use App\Models\InventoryItem;
 use App\Models\MaterialIssuance;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
 
 class ReportService
 {
-    public function getInventoryMovementReport(array $filters = [])
+    public function getInventoryMovementReport(array $filters = [], $paginate = true)
     {
         $query = StockMovement::with(['inventoryItem', 'createdBy']);
 
@@ -33,10 +34,12 @@ class ReportService
             $query->whereDate('created_at', '<=', $filters['date_to']);
         }
 
-        return $query->orderBy('created_at', 'desc')->get();
+        $query->orderBy('created_at', 'desc');
+        
+        return $paginate ? $query->paginate(15)->withQueryString() : $query->get();
     }
 
-    public function getPurchaseHistoryReport(array $filters = [])
+    public function getPurchaseHistoryReport(array $filters = [], $paginate = true)
     {
         $query = PurchaseOrder::with(['supplier', 'items.inventoryItem', 'items.supplier']);
 
@@ -61,10 +64,12 @@ class ReportService
             $query->whereDate('po_date', '<=', $filters['date_to']);
         }
 
-        return $query->orderBy('po_date', 'desc')->get();
+        $query->orderBy('po_date', 'desc');
+        
+        return $paginate ? $query->paginate(15)->withQueryString() : $query->get();
     }
 
-    public function getProjectConsumptionReport(int $projectId, array $filters = [])
+    public function getProjectConsumptionReport(int $projectId, array $filters = [], $paginate = true)
     {
         $query = MaterialIssuance::with(['items.inventoryItem'])
             ->where('project_id', $projectId)
@@ -78,14 +83,19 @@ class ReportService
             $query->whereDate('issuance_date', '<=', $filters['date_to']);
         }
 
-        return $query->orderBy('issuance_date', 'desc')->get();
+        $query->orderBy('issuance_date', 'desc');
+        
+        return $paginate ? $query->paginate(15)->withQueryString() : $query->get();
     }
 
-    public function getSupplierPerformanceReport(array $filters = [])
+    public function getSupplierPerformanceReport(array $filters = [], $paginate = true)
     {
-        $suppliers = Supplier::all();
+        $suppliersQuery = Supplier::query();
+        
+        // Get all suppliers first, then filter and map
+        $suppliers = $suppliersQuery->get();
 
-        return $suppliers->map(function ($supplier) use ($filters) {
+        $results = $suppliers->map(function ($supplier) use ($filters) {
             // Get POs where supplier_id matches OR where items have this supplier
             $query = PurchaseOrder::where(function($q) use ($supplier) {
                 $q->where('supplier_id', $supplier->id)
@@ -138,7 +148,25 @@ class ReportService
         })->filter(function ($item) {
             // Only return suppliers that have at least one order
             return $item['total_orders'] > 0;
-        });
+        })->values();
+        
+        // For pagination, we need to manually paginate the collection
+        if ($paginate) {
+            $page = request()->get('page', 1);
+            $perPage = 15;
+            $offset = ($page - 1) * $perPage;
+            $items = $results->slice($offset, $perPage)->values();
+            
+            return new LengthAwarePaginator(
+                $items,
+                $results->count(),
+                $perPage,
+                $page,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
+        }
+        
+        return $results;
     }
 
     public function getDelayedProjectsReport()

@@ -41,10 +41,19 @@ class GoodsReceiptController extends Controller
         
         if ($request->has('purchase_order_id')) {
             $purchaseOrder = PurchaseOrder::with(['items.inventoryItem', 'supplier'])->findOrFail($request->purchase_order_id);
+            
+            // Check if PO already has an approved goods receipt
+            if ($purchaseOrder->goodsReceipts()->where('status', 'approved')->exists()) {
+                return redirect()->route('goods-receipts.index')
+                    ->with('error', 'This purchase order already has an approved goods receipt.');
+            }
         } else {
-            // Get approved purchase orders that haven't been fully received
+            // Get approved purchase orders that don't have approved goods receipts
             $purchaseOrders = PurchaseOrder::with(['supplier', 'items.inventoryItem'])
                 ->where('status', 'approved')
+                ->whereDoesntHave('goodsReceipts', function ($q) {
+                    $q->where('status', 'approved');
+                })
                 ->orderBy('po_date', 'desc')
                 ->get();
         }
@@ -81,6 +90,14 @@ class GoodsReceiptController extends Controller
 
         // Get project_code from purchase_order
         $purchaseOrder = PurchaseOrder::with('purchaseRequest.project')->findOrFail($validated['purchase_order_id']);
+        
+        // Check if PO already has an approved goods receipt
+        if ($purchaseOrder->goodsReceipts()->where('status', 'approved')->exists()) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'This purchase order already has an approved goods receipt.');
+        }
+        
         if ($purchaseOrder->project_code) {
             $validated['project_code'] = $purchaseOrder->project_code;
         } elseif ($purchaseOrder->purchaseRequest && $purchaseOrder->purchaseRequest->project) {

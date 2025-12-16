@@ -68,6 +68,14 @@ class MaterialIssuanceController extends Controller
             'items.*.unit_cost' => 'nullable|numeric|min:0',
             'items.*.notes' => 'nullable|string',
         ]);
+        
+        // Check for duplicate inventory_item_id values
+        $inventoryItemIds = array_column($validated['items'], 'inventory_item_id');
+        if (count($inventoryItemIds) !== count(array_unique($inventoryItemIds))) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['items' => 'Each item can only be selected once. Please remove duplicate items.']);
+        }
 
         $validated['issuance_number'] = 'MI-' . strtoupper(Str::random(8));
         $validated['status'] = 'draft';
