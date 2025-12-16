@@ -132,7 +132,7 @@
 <body>
     <div class="header">
         <h1>PURCHASE HISTORY REPORT</h1>
-        <p><strong>Generated Date:</strong> {{ now()->format('F d, Y h:i A') }}</p>
+        <p><strong>Generated Date:</strong> {{ \Carbon\Carbon::now()->setTimezone('Asia/Manila')->format('F d, Y h:i A') }}</p>
     </div>
     
     @if(isset($filters) && (isset($filters['supplier_id']) || isset($filters['status']) || isset($filters['date_from']) || isset($filters['date_to'])))
@@ -158,12 +158,11 @@
         <thead>
             <tr>
                 <th style="width: 5%;">#</th>
-                <th style="width: 15%;">PO Number</th>
-                <th style="width: 12%;">Date</th>
-                <th style="width: 25%;">Supplier</th>
-                <th style="width: 13%;">Status</th>
-                <th style="width: 15%;">Items</th>
-                <th style="width: 15%;">Total Amount</th>
+                <th style="width: 18%;">PO Number</th>
+                <th style="width: 15%;">Date</th>
+                <th style="width: 30%;">Supplier</th>
+                <th style="width: 15%;">Status</th>
+                <th style="width: 17%;">Items</th>
             </tr>
         </thead>
         <tbody>
@@ -177,9 +176,27 @@
                         {{ $po->po_date ? $po->po_date->format('M d, Y') : 'N/A' }}
                     </td>
                     <td>
-                        <div><strong>{{ $po->supplier->name ?? 'N/A' }}</strong></div>
-                        @if($po->supplier && $po->supplier->email)
-                        <small style="color: #666;">{{ $po->supplier->email }}</small>
+                        @if($po->supplier)
+                            <div><strong>{{ $po->supplier->name }}</strong></div>
+                            @if($po->supplier->email)
+                            <small style="color: #666;">{{ $po->supplier->email }}</small>
+                            @endif
+                        @elseif($po->items->isNotEmpty())
+                            @php
+                                $suppliers = $po->items->pluck('supplier')->filter()->unique('id');
+                            @endphp
+                            @if($suppliers->count() > 0)
+                                @if($suppliers->count() == 1)
+                                    <div><strong>{{ $suppliers->first()->name }}</strong></div>
+                                @else
+                                    <div><strong>Multiple Suppliers</strong></div>
+                                    <small style="color: #666;">{{ $suppliers->pluck('name')->join(', ') }}</small>
+                                @endif
+                            @else
+                                <div><strong>N/A</strong></div>
+                            @endif
+                        @else
+                            <div><strong>N/A</strong></div>
                         @endif
                     </td>
                     <td class="text-center">
@@ -190,13 +207,10 @@
                     <td class="text-center">
                         {{ $po->items->count() }} items
                     </td>
-                    <td class="text-right">
-                        <strong>₱{{ number_format($po->total_amount ?? 0, 2) }}</strong>
-                    </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center" style="padding: 20px;">
+                    <td colspan="6" class="text-center" style="padding: 20px;">
                         No purchase orders found for the selected criteria.
                     </td>
                 </tr>
@@ -208,14 +222,13 @@
     <div class="summary">
         <strong>Summary:</strong><br>
         Total Orders: {{ $data->count() }}<br>
-        Completed Orders: {{ $data->where('status', 'completed')->count() }}<br>
-        Total Amount: ₱{{ number_format($data->sum('total_amount'), 2) }}
+        Completed Orders: {{ $data->where('status', 'completed')->count() }}
     </div>
     @endif
     
     <div class="print-info">
         <p><strong>Printed by:</strong> {{ $printedBy->name ?? 'System' }} ({{ $printedBy->role->name ?? 'User' }})</p>
-        <p><strong>Printed on:</strong> {{ now()->format('F d, Y h:i A') }}</p>
+        <p><strong>Printed on:</strong> {{ \Carbon\Carbon::now()->setTimezone('Asia/Manila')->format('F d, Y h:i A') }}</p>
     </div>
     
     <div class="footer">

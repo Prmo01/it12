@@ -38,10 +38,15 @@ class ReportService
 
     public function getPurchaseHistoryReport(array $filters = [])
     {
-        $query = PurchaseOrder::with(['supplier', 'items.inventoryItem']);
+        $query = PurchaseOrder::with(['supplier', 'items.inventoryItem', 'items.supplier']);
 
         if (isset($filters['supplier_id'])) {
-            $query->where('supplier_id', $filters['supplier_id']);
+            $query->where(function($q) use ($filters) {
+                $q->where('supplier_id', $filters['supplier_id'])
+                  ->orWhereHas('items', function($itemQuery) use ($filters) {
+                      $itemQuery->where('supplier_id', $filters['supplier_id']);
+                  });
+            });
         }
 
         if (isset($filters['status'])) {
@@ -78,26 +83,47 @@ class ReportService
 
     public function getSupplierPerformanceReport(array $filters = [])
     {
-        $query = Supplier::with(['purchaseOrders' => function ($q) use ($filters) {
+        $suppliers = Supplier::all();
+
+        return $suppliers->map(function ($supplier) use ($filters) {
+            // Get POs where supplier_id matches OR where items have this supplier
+            $query = PurchaseOrder::where(function($q) use ($supplier) {
+                $q->where('supplier_id', $supplier->id)
+                  ->orWhereHas('items', function($itemQuery) use ($supplier) {
+                      $itemQuery->where('supplier_id', $supplier->id);
+                  });
+            });
+
+            // Apply date filters
             if (isset($filters['date_from'])) {
-                $q->whereDate('po_date', '>=', $filters['date_from']);
+                $query->whereDate('po_date', '>=', $filters['date_from']);
             }
             if (isset($filters['date_to'])) {
-                $q->whereDate('po_date', '<=', $filters['date_to']);
+                $query->whereDate('po_date', '<=', $filters['date_to']);
             }
-        }]);
 
-        $suppliers = $query->get();
-
-        return $suppliers->map(function ($supplier) {
-            $orders = $supplier->purchaseOrders;
+            // Eager load goods receipts for on-time delivery calculation
+            $orders = $query->with('goodsReceipts')->get();
+            
             $totalOrders = $orders->count();
             $totalAmount = $orders->sum('total_amount');
-            $completedOrders = $orders->where('status', 'completed')->count();
+            
+            // A PO is considered completed if:
+            // 1. Status is 'completed', OR
+            // 2. Has at least one approved goods receipt
+            $completedOrders = $orders->filter(function ($po) {
+                if ($po->status === 'completed') {
+                    return true;
+                }
+                // Check if PO has approved goods receipts
+                return $po->goodsReceipts->where('status', 'approved')->isNotEmpty();
+            })->count();
+            
             $onTimeDeliveries = $orders->filter(function ($po) {
                 if (!$po->expected_delivery_date) return false;
-                $lastGR = $po->goodsReceipts()->latest()->first();
-                if (!$lastGR) return false;
+                $approvedGRs = $po->goodsReceipts->where('status', 'approved');
+                if ($approvedGRs->isEmpty()) return false;
+                $lastGR = $approvedGRs->sortByDesc('gr_date')->first();
                 return $lastGR->gr_date <= $po->expected_delivery_date;
             })->count();
 
@@ -109,6 +135,9 @@ class ReportService
                 'on_time_deliveries' => $onTimeDeliveries,
                 'on_time_rate' => $totalOrders > 0 ? ($onTimeDeliveries / $totalOrders) * 100 : 0,
             ];
+        })->filter(function ($item) {
+            // Only return suppliers that have at least one order
+            return $item['total_orders'] > 0;
         });
     }
 

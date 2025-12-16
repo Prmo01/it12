@@ -96,7 +96,25 @@
                                 <span class="text-muted">{{ $po->po_date ? $po->po_date->format('M d, Y') : 'N/A' }}</span>
                             </td>
                             <td>
-                                <div class="fw-semibold">{{ $po->supplier->name ?? 'N/A' }}</div>
+                                @if($po->supplier)
+                                    <div class="fw-semibold">{{ $po->supplier->name }}</div>
+                                @elseif($po->items->isNotEmpty())
+                                    @php
+                                        $suppliers = $po->items->pluck('supplier')->filter()->unique('id');
+                                    @endphp
+                                    @if($suppliers->count() > 0)
+                                        @if($suppliers->count() == 1)
+                                            <div class="fw-semibold">{{ $suppliers->first()->name }}</div>
+                                        @else
+                                            <div class="fw-semibold">Multiple Suppliers</div>
+                                            <small class="text-muted">{{ $suppliers->pluck('name')->join(', ') }}</small>
+                                        @endif
+                                    @else
+                                        <div class="fw-semibold">N/A</div>
+                                    @endif
+                                @else
+                                    <div class="fw-semibold">N/A</div>
+                                @endif
                             </td>
                             <td>
                                 <span class="status-text status-text-{{ $po->status === 'completed' ? 'success' : ($po->status === 'approved' ? 'primary' : ($po->status === 'cancelled' ? 'danger' : 'warning')) }}">

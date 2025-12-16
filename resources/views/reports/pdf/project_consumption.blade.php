@@ -120,7 +120,7 @@
 <body>
     <div class="header">
         <h1>PROJECT CONSUMPTION REPORT</h1>
-        <p><strong>Generated Date:</strong> {{ now()->format('F d, Y h:i A') }}</p>
+        <p><strong>Generated Date:</strong> {{ \Carbon\Carbon::now()->setTimezone('Asia/Manila')->format('F d, Y h:i A') }}</p>
     </div>
     
     @if(isset($filters) && isset($filters['project_id']))
@@ -214,7 +214,7 @@
     
     <div class="print-info">
         <p><strong>Printed by:</strong> {{ $printedBy->name ?? 'System' }} ({{ $printedBy->role->name ?? 'User' }})</p>
-        <p><strong>Printed on:</strong> {{ now()->format('F d, Y h:i A') }}</p>
+        <p><strong>Printed on:</strong> {{ \Carbon\Carbon::now()->setTimezone('Asia/Manila')->format('F d, Y h:i A') }}</p>
     </div>
     
     <div class="footer">
