@@ -11,14 +11,6 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Trust all proxies (Render uses a reverse proxy)
-        $middleware->trustProxies(at: '*');
-        
-        // Force HTTPS in production
-        if (app()->environment('production')) {
-            $middleware->append(\App\Http\Middleware\ForceHttps::class);
-        }
-        
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
