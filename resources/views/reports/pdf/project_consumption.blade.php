@@ -119,6 +119,7 @@
 </head>
 <body>
     <div class="header">
+        <p style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">Davao Modern Glass and Alluminum Supply Corp.</p>
         <h1>PROJECT CONSUMPTION REPORT</h1>
         <p><strong>Generated Date:</strong> {{ \Carbon\Carbon::now()->setTimezone('Asia/Manila')->format('F d, Y h:i A') }}</p>
     </div>

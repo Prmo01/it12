@@ -23,10 +23,7 @@ class PurchaseOrderController extends Controller
 
     public function index(Request $request)
     {
-        $query = PurchaseOrder::with(['purchaseRequest', 'items.supplier'])
-            ->whereDoesntHave('goodsReceipts', function ($q) {
-                $q->where('status', 'approved'); // Exclude POs that have approved goods receipts
-            });
+        $query = PurchaseOrder::with(['purchaseRequest', 'items.supplier']);
 
         if ($request->has('status')) {
             $query->where('status', $request->status);

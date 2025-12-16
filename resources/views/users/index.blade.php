@@ -126,11 +126,11 @@
     }
     
     .badge-role {
-        background: #2563eb;
-        color: #ffffff;
-        padding: 0.375rem 0.75rem;
-        border-radius: 6px;
-        font-size: 0.75rem;
+        background: transparent;
+        color: #374151;
+        padding: 0;
+        border-radius: 0;
+        font-size: 0.875rem;
         font-weight: 600;
     }
     

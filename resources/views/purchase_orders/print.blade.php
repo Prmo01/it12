@@ -306,7 +306,7 @@
     
     <div class="print-info">
         <p><strong>Printed by:</strong> {{ $printedBy->name }} ({{ $printedBy->role->name ?? 'User' }})</p>
-        <p><strong>Printed on:</strong> {{ now()->format('F d, Y h:i A') }}</p>
+        <p><strong>Printed on:</strong> {{ \Carbon\Carbon::now()->setTimezone('Asia/Manila')->format('F d, Y h:i A') }}</p>
     </div>
 </body>
 </html>
