@@ -41,7 +41,7 @@
                             </td>
                             <td><span class="text-muted">{{ $return->return_date ? $return->return_date->format('M d, Y') : 'N/A' }}</span></td>
                             <td>
-                                <span class="badge badge-{{ $return->status === 'approved' ? 'success' : ($return->status === 'pending' ? 'primary' : 'warning') }}">
+                                <span class="status-text status-text-{{ $return->status === 'approved' ? 'success' : ($return->status === 'pending' ? 'primary' : 'warning') }}">
                                     {{ ucfirst($return->status) }}
                                 </span>
                             </td>

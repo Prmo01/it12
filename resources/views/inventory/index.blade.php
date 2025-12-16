@@ -38,7 +38,13 @@
                                     <small class="text-muted">{{ Str::limit($item->description, 40) }}</small>
                                 @endif
                             </td>
-                            <td>{{ $item->category ?? '<span class="text-muted">N/A</span>' }}</td>
+                            <td>
+                                @if($item->category)
+                                    {{ $item->category }}
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
                             <td>
                                 <span class="type-badge type-{{ str_replace('_', '-', $item->item_type) }}">
                                     {{ ucfirst(str_replace('_', ' ', $item->item_type)) }}
@@ -49,12 +55,12 @@
                                     <span class="fw-semibold">{{ number_format($item->current_stock, 2) }}</span>
                                     <span class="text-muted">{{ $item->unit_of_measure }}</span>
                                     @if($item->needs_reorder)
-                                        <span class="badge badge-danger ms-2">Low Stock</span>
+                                        <span class="status-text status-text-danger ms-2">Low Stock</span>
                                     @endif
                                 </div>
                             </td>
                             <td>
-                                <span class="badge badge-{{ $item->status === 'active' ? 'success' : 'secondary' }}">
+                                <span class="status-text status-text-{{ $item->status === 'active' ? 'success' : 'secondary' }}">
                                     {{ ucfirst($item->status) }}
                                 </span>
                             </td>

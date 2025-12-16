@@ -17,8 +17,8 @@
 <!-- Stats Cards -->
 <div class="row mb-2">
     <div class="col-md-3 mb-3">
-        <a href="{{ route('projects.index') }}" class="text-decoration-none" style="color: inherit;">
-            <div class="stat-card stat-card-primary" style="cursor: pointer;">
+        <a href="{{ route('projects.index') }}" class="stat-card-link">
+            <div class="stat-card stat-card-primary">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -36,25 +36,27 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="stat-card stat-card-success">
-            <div class="stat-card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div class="stat-content">
-                        <p class="stat-label">Active Projects</p>
-                        <h2 class="stat-value">{{ $activeProjects }}</h2>
-                        <small class="stat-change text-muted">In progress</small>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="bi bi-check-circle"></i>
+        <a href="{{ route('projects.index', ['status' => 'active']) }}" class="stat-card-link">
+            <div class="stat-card stat-card-success">
+                <div class="stat-card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="stat-content">
+                            <p class="stat-label">Active Projects</p>
+                            <h2 class="stat-value">{{ $activeProjects }}</h2>
+                            <small class="stat-change text-muted">In progress</small>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
     
     <div class="col-md-3 mb-3">
-        <a href="{{ route('change-orders.index') }}" class="text-decoration-none" style="color: inherit;">
-            <div class="stat-card stat-card-warning" style="cursor: pointer;">
+        <a href="{{ route('change-orders.index') }}" class="stat-card-link">
+            <div class="stat-card stat-card-warning">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -72,8 +74,8 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <a href="{{ route('purchase-requests.index') }}" class="text-decoration-none" style="color: inherit;">
-            <div class="stat-card stat-card-info" style="cursor: pointer;">
+        <a href="{{ route('purchase-requests.index') }}" class="stat-card-link">
+            <div class="stat-card stat-card-info">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -153,7 +155,7 @@
                         <div class="activity-item-content">
                             <div class="activity-item-header">
                                 <h6 class="activity-item-title">{{ $project->name }}</h6>
-                                <span class="badge badge-{{ $project->status === 'active' ? 'success' : ($project->status === 'planning' ? 'primary' : 'secondary') }}">{{ ucfirst($project->status) }}</span>
+                                <span class="status-text status-text-{{ $project->status === 'active' ? 'success' : ($project->status === 'planning' ? 'primary' : 'secondary') }}">{{ ucfirst($project->status) }}</span>
                             </div>
                             <p class="activity-item-meta">
                                 <i class="bi bi-clock"></i> {{ $project->created_at->diffForHumans() }}
@@ -183,7 +185,7 @@
                         <div class="activity-item-content">
                             <div class="activity-item-header">
                                 <h6 class="activity-item-title">{{ $co->co_number }}</h6>
-                                <span class="badge badge-{{ $co->status === 'approved' ? 'success' : ($co->status === 'pending' ? 'warning' : 'secondary') }}">{{ ucfirst($co->status) }}</span>
+                                <span class="status-text status-text-{{ $co->status === 'approved' ? 'success' : ($co->status === 'pending' ? 'warning' : 'secondary') }}">{{ ucfirst($co->status) }}</span>
                             </div>
                             <p class="activity-item-meta">
                                 <i class="bi bi-briefcase"></i> {{ $co->project->name ?? 'N/A' }} • 
@@ -214,7 +216,7 @@
                         <div class="activity-item-content">
                             <div class="activity-item-header">
                                 <h6 class="activity-item-title">{{ $pr->pr_number }}</h6>
-                                <span class="badge badge-{{ $pr->status === 'approved' ? 'success' : ($pr->status === 'pending' ? 'warning' : 'secondary') }}">{{ ucfirst($pr->status) }}</span>
+                                <span class="status-text status-text-{{ $pr->status === 'approved' ? 'success' : ($pr->status === 'pending' ? 'warning' : 'secondary') }}">{{ ucfirst($pr->status) }}</span>
                             </div>
                             <p class="activity-item-meta">
                                 <i class="bi bi-briefcase"></i> {{ $pr->project->name ?? 'N/A' }} • 

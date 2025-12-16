@@ -56,7 +56,7 @@
                         <span class="info-label">Project Code</span>
                         <span class="info-value">
                             @if($quotation->project_code)
-                                <span class="badge badge-info font-monospace">{{ $quotation->project_code }}</span>
+                                <span class="project-code-text">{{ $quotation->project_code }}</span>
                             @else
                                 <span class="text-muted">N/A</span>
                             @endif
@@ -65,7 +65,7 @@
                     <div class="info-item">
                         <span class="info-label">Status</span>
                         <span class="info-value">
-                            <span class="badge badge-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'primary' : 'warning') }}">
+                            <span class="status-text status-text-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'primary' : 'warning') }}">
                                 {{ ucfirst($quotation->status) }}
                             </span>
                         </span>
@@ -136,7 +136,7 @@
                                     </td>
                                     <td>
                                         @if($item->supplier)
-                                            <span class="badge badge-info">{{ $item->supplier->name }}</span>
+                                            <span class="supplier-text">{{ $item->supplier->name }}</span>
                                         @else
                                             <span class="text-muted">N/A</span>
                                         @endif

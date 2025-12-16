@@ -23,44 +23,48 @@
 <div class="row mb-2">
     @if($canAccessProjects)
     <div class="col-md-3 mb-3">
-        <div class="stat-card stat-card-primary">
-            <div class="stat-card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div class="stat-content">
-                        <p class="stat-label">Total Projects</p>
-                        <h2 class="stat-value">{{ $totalProjects }}</h2>
-                        <small class="stat-change text-muted">Excluding completed</small>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="bi bi-folder"></i>
+        <a href="{{ route('projects.index') }}" class="stat-card-link">
+            <div class="stat-card stat-card-primary">
+                <div class="stat-card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="stat-content">
+                            <p class="stat-label">Total Projects</p>
+                            <h2 class="stat-value">{{ $totalProjects }}</h2>
+                            <small class="stat-change text-muted">Excluding completed</small>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="bi bi-folder"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="stat-card stat-card-success">
-            <div class="stat-card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div class="stat-content">
-                        <p class="stat-label">Active Projects</p>
-                        <h2 class="stat-value">{{ $activeProjects }}</h2>
-                        <small class="stat-change text-muted">In progress</small>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="bi bi-check-circle"></i>
+        <a href="{{ route('projects.index', ['status' => 'active']) }}" class="stat-card-link">
+            <div class="stat-card stat-card-success">
+                <div class="stat-card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="stat-content">
+                            <p class="stat-label">Active Projects</p>
+                            <h2 class="stat-value">{{ $activeProjects }}</h2>
+                            <small class="stat-change text-muted">In progress</small>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
     @endif
     
     @if($canAccessPurchaseOrders)
     <div class="col-md-3 mb-3">
-        <a href="{{ route('purchase-orders.pending') }}" class="text-decoration-none" style="color: inherit;">
-            <div class="stat-card stat-card-warning" style="cursor: pointer;">
+        <a href="{{ route('purchase-orders.pending') }}" class="stat-card-link">
+            <div class="stat-card stat-card-warning">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -80,20 +84,22 @@
     
     @if($canAccessInventory)
     <div class="col-md-3 mb-3">
-        <div class="stat-card stat-card-danger">
-            <div class="stat-card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div class="stat-content">
-                        <p class="stat-label">Low Stock Items</p>
-                        <h2 class="stat-value">{{ $lowStockItems }}</h2>
-                        <small class="stat-change text-muted">Needs attention</small>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="bi bi-exclamation-triangle"></i>
+        <a href="{{ route('inventory.index') }}" class="stat-card-link">
+            <div class="stat-card stat-card-danger">
+                <div class="stat-card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="stat-content">
+                            <p class="stat-label">Low Stock Items</p>
+                            <h2 class="stat-value">{{ $lowStockItems }}</h2>
+                            <small class="stat-change text-muted">Needs attention</small>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
     @endif
 </div>
@@ -212,7 +218,7 @@
                         <div class="activity-item-content">
                             <div class="activity-item-header">
                                 <h6 class="activity-item-title">{{ $project->name }}</h6>
-                                <span class="badge badge-{{ $project->status === 'active' ? 'success' : 'secondary' }}">{{ ucfirst($project->status) }}</span>
+                                <span class="status-text status-text-{{ $project->status === 'active' ? 'success' : 'secondary' }}">{{ ucfirst($project->status) }}</span>
                             </div>
                             <p class="activity-item-meta">
                                 <i class="bi bi-clock"></i> {{ $project->created_at->diffForHumans() }}
@@ -244,7 +250,7 @@
                         <div class="activity-item-content">
                             <div class="activity-item-header">
                                 <h6 class="activity-item-title">{{ $po->po_number }}</h6>
-                                <span class="badge badge-info">{{ $po->supplier->name ?? 'N/A' }}</span>
+                                <span class="supplier-text">{{ $po->supplier->name ?? 'N/A' }}</span>
                             </div>
                             <p class="activity-item-meta">
                                 <i class="bi bi-clock"></i> {{ $po->created_at->diffForHumans() }}
@@ -276,7 +282,7 @@
                         <div class="activity-item-content">
                             <div class="activity-item-header">
                                 <h6 class="activity-item-title">{{ $issuance->issuance_number }}</h6>
-                                <span class="badge badge-{{ $issuance->status === 'issued' ? 'success' : ($issuance->status === 'approved' ? 'primary' : 'warning') }}">{{ ucfirst($issuance->status) }}</span>
+                                <span class="status-text status-text-{{ $issuance->status === 'issued' ? 'success' : ($issuance->status === 'approved' ? 'primary' : 'warning') }}">{{ ucfirst($issuance->status) }}</span>
                             </div>
                             <p class="activity-item-meta">
                                 <i class="bi bi-briefcase"></i> {{ $issuance->project->name ?? 'N/A' }} • 
@@ -338,6 +344,22 @@
     .stat-card-danger {
         --card-color: #ef4444;
         --card-color-light: #f87171;
+    }
+    
+    .stat-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+    
+    .stat-card-link:hover .stat-card {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+    }
+    
+    .stat-card {
+        cursor: pointer;
     }
     
     .stat-card:hover {
@@ -558,7 +580,40 @@
         font-size: 0.875rem;
     }
     
-    /* Badges */
+    /* Status Text (replacing badges) */
+    .status-text {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0;
+        border-radius: 0;
+        display: inline-block;
+    }
+    
+    .status-text-success {
+        color: #10b981;
+    }
+    
+    .status-text-secondary {
+        color: #6b7280;
+    }
+    
+    .status-text-info {
+        color: #3b82f6;
+    }
+    
+    .status-text-primary {
+        color: #2563eb;
+    }
+    
+    .status-text-warning {
+        color: #f59e0b;
+    }
+    
+    .status-text-danger {
+        color: #ef4444;
+    }
+    
+    /* Badges (kept for backward compatibility but hidden) */
     .badge-success {
         background: #10b981;
         color: #ffffff;
@@ -1127,10 +1182,6 @@
                     },
                     cornerRadius: 10,
                     callbacks: {
-                        afterLabel: function(context) {
-                            const supplier = suppliersData[context.dataIndex];
-                            return 'Total: ₱' + parseFloat(supplier.total_amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                        }
                     }
                 }
             },

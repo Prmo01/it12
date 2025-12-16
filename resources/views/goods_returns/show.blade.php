@@ -70,7 +70,7 @@
                     <div class="info-item">
                         <span class="info-label">Status</span>
                         <span class="info-value">
-                            <span class="badge badge-{{ $goodsReturn->status === 'approved' ? 'success' : (in_array($goodsReturn->status, ['draft', 'pending']) ? 'warning' : 'warning') }}">
+                            <span class="status-text status-text-{{ $goodsReturn->status === 'approved' ? 'success' : (in_array($goodsReturn->status, ['draft', 'pending']) ? 'warning' : 'warning') }}">
                                 {{ ucfirst($goodsReturn->status) }}
                             </span>
                         </span>

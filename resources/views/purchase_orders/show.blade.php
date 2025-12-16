@@ -64,7 +64,7 @@
                         <span class="info-label">Project Code</span>
                         <span class="info-value">
                             @if($purchaseOrder->project_code)
-                                <span class="badge badge-info font-monospace">{{ $purchaseOrder->project_code }}</span>
+                                <span class="project-code-text">{{ $purchaseOrder->project_code }}</span>
                             @else
                                 <span class="text-muted">N/A</span>
                             @endif
@@ -73,7 +73,7 @@
                     <div class="info-item">
                         <span class="info-label">Status</span>
                         <span class="info-value">
-                            <span class="badge badge-{{ $purchaseOrder->status === 'approved' ? 'success' : ($purchaseOrder->status === 'pending' ? 'primary' : ($purchaseOrder->status === 'completed' ? 'info' : 'warning')) }}">
+                            <span class="status-text status-text-{{ $purchaseOrder->status === 'approved' ? 'success' : ($purchaseOrder->status === 'pending' ? 'primary' : ($purchaseOrder->status === 'completed' ? 'info' : 'warning')) }}">
                                 {{ ucfirst($purchaseOrder->status) }}
                             </span>
                         </span>
@@ -88,10 +88,6 @@
                         <span class="info-value">{{ $purchaseOrder->expected_delivery_date->format('M d, Y') }}</span>
                     </div>
                     @endif
-                    <div class="info-item">
-                        <span class="info-label">Total Amount</span>
-                        <span class="info-value text-success fw-bold">₱{{ number_format($purchaseOrder->total_amount, 2) }}</span>
-                    </div>
                     @if($purchaseOrder->delivery_address)
                     <div class="info-item full-width">
                         <span class="info-label">Delivery Address</span>
@@ -131,10 +127,6 @@
                                 <th>Item</th>
                                 <th>Supplier</th>
                                 <th>Quantity</th>
-                                @if(showPrices())
-                                <th>Unit Price</th>
-                                <th>Total</th>
-                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -146,7 +138,7 @@
                                     </td>
                                     <td>
                                         @if($item->supplier)
-                                            <span class="badge badge-info">{{ $item->supplier->name }}</span>
+                                            <span class="supplier-text">{{ $item->supplier->name }}</span>
                                         @else
                                             <span class="text-muted">N/A</span>
                                         @endif
@@ -155,23 +147,9 @@
                                         <span class="fw-semibold">{{ number_format($item->quantity, 2) }}</span>
                                         <span class="text-muted">{{ $item->inventoryItem->unit_of_measure }}</span>
                                     </td>
-                                    @if(showPrices())
-                                    <td>₱{{ number_format($item->unit_price, 2) }}</td>
-                                    <td><strong class="text-success">₱{{ number_format($item->total_price, 2) }}</strong></td>
-                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>
-                        @if(showPrices())
-                        <tfoot>
-                            <tr class="table-footer">
-                                <th colspan="2" class="text-end">Total Amount:</th>
-                                <th colspan="2" class="text-success">
-                                    ₱{{ number_format($purchaseOrder->total_amount, 2) }}
-                                </th>
-                            </tr>
-                        </tfoot>
-                        @endif
                     </table>
                 </div>
             </div>

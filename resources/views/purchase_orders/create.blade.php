@@ -69,8 +69,6 @@
                                         <th>Item</th>
                                         <th>Supplier</th>
                                         <th>Quantity</th>
-                                        <th>Unit Price</th>
-                                        <th>Total</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -82,7 +80,7 @@
                                             </td>
                                             <td>
                                                 @if($item->supplier)
-                                                    <span class="badge badge-info">{{ $item->supplier->name }}</span>
+                                                    <span class="supplier-text">{{ $item->supplier->name }}</span>
                                                 @else
                                                     <span class="text-muted">N/A</span>
                                                 @endif
@@ -91,19 +89,9 @@
                                                 <span class="fw-semibold">{{ number_format($item->quantity, 2) }}</span>
                                                 <span class="text-muted">{{ $item->inventoryItem->unit_of_measure }}</span>
                                             </td>
-                                            <td>₱{{ number_format($item->unit_price, 2) }}</td>
-                                            <td><strong class="text-success">₱{{ number_format($item->total_price, 2) }}</strong></td>
                                         </tr>
                                     @endforeach
                                 </tbody>
-                                <tfoot>
-                                    <tr class="table-footer">
-                                        <th colspan="2" class="text-end">Total Amount:</th>
-                                        <th colspan="2" class="text-success">
-                                            ₱{{ number_format($quotation->total_amount, 2) }}
-                                        </th>
-                                    </tr>
-                                </tfoot>
                             </table>
                         </div>
                     </div>

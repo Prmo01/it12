@@ -41,6 +41,22 @@
         --card-color-light: #f87171;
     }
     
+    .stat-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+    
+    .stat-card-link:hover .stat-card {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+    }
+    
+    .stat-card {
+        cursor: pointer;
+    }
+    
     .stat-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
@@ -299,6 +315,39 @@
         border-radius: 6px;
         font-size: 0.75rem;
         font-weight: 600;
+    }
+    
+    /* Status Text (replacing badges) */
+    .status-text {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0;
+        border-radius: 0;
+        display: inline-block;
+    }
+    
+    .status-text-success {
+        color: #10b981;
+    }
+    
+    .status-text-secondary {
+        color: #6b7280;
+    }
+    
+    .status-text-info {
+        color: #3b82f6;
+    }
+    
+    .status-text-primary {
+        color: #2563eb;
+    }
+    
+    .status-text-warning {
+        color: #f59e0b;
+    }
+    
+    .status-text-danger {
+        color: #ef4444;
     }
     
     .stat-card-info {

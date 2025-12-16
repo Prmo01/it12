@@ -10,11 +10,8 @@
     </div>
     <div class="d-flex gap-2">
         @if($data->isNotEmpty())
-        <a href="{{ route('reports.purchase-history', array_merge(request()->all(), ['export' => 'pdf'])) }}" class="btn btn-danger">
+        <a href="{{ route('reports.purchase-history', array_merge(request()->all(), ['export' => 'pdf'])) }}" class="btn btn-outline-secondary">
             <i class="bi bi-file-earmark-pdf"></i> Export PDF
-        </a>
-        <a href="{{ route('reports.purchase-history', array_merge(request()->all(), ['export' => 'csv'])) }}" class="btn btn-success">
-            <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
         </a>
         @endif
         <a href="{{ route('reports.index') }}" class="btn btn-secondary">
@@ -87,7 +84,6 @@
                         <th>Supplier</th>
                         <th>Status</th>
                         <th>Items</th>
-                        <th>Total Amount</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -103,20 +99,17 @@
                                 <div class="fw-semibold">{{ $po->supplier->name ?? 'N/A' }}</div>
                             </td>
                             <td>
-                                <span class="badge badge-{{ $po->status === 'completed' ? 'success' : ($po->status === 'approved' ? 'primary' : ($po->status === 'cancelled' ? 'danger' : 'warning')) }}">
+                                <span class="status-text status-text-{{ $po->status === 'completed' ? 'success' : ($po->status === 'approved' ? 'primary' : ($po->status === 'cancelled' ? 'danger' : 'warning')) }}">
                                     {{ ucfirst($po->status) }}
                                 </span>
                             </td>
                             <td>
                                 <span class="badge badge-info">{{ $po->items->count() }} items</span>
                             </td>
-                            <td>
-                                <span class="fw-semibold">₱{{ number_format($po->total_amount ?? 0, 2) }}</span>
-                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5">
+                            <td colspan="5" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="bi bi-cart-check"></i>
                                     <p class="mt-3 mb-0">No purchase orders found</p>
@@ -135,10 +128,6 @@
                 <div class="col-md-4">
                     <div class="fw-semibold text-muted">Total Orders</div>
                     <div class="h4 mb-0">{{ $data->count() }}</div>
-                </div>
-                <div class="col-md-4">
-                    <div class="fw-semibold text-muted">Total Amount</div>
-                    <div class="h4 mb-0">₱{{ number_format($data->sum('total_amount'), 2) }}</div>
                 </div>
                 <div class="col-md-4">
                     <div class="fw-semibold text-muted">Completed Orders</div>

@@ -111,8 +111,7 @@ class ReportsController extends Controller
                 }
 
             case 'csv':
-            case 'excel':
-                return $this->reportService->exportToCsv($data, $reportName, $format === 'excel');
+                return $this->reportService->exportToCsv($data, $reportName, false);
 
             case 'json':
                 return response()->json($data);

@@ -43,7 +43,7 @@
                     <div class="info-item">
                         <span class="info-label">Status</span>
                         <span class="info-value">
-                            <span class="badge badge-{{ $project->status === 'active' ? 'success' : ($project->status === 'completed' ? 'primary' : ($project->status === 'on_hold' ? 'warning' : 'secondary')) }}">
+                            <span class="status-text status-text-{{ $project->status === 'active' ? 'success' : ($project->status === 'completed' ? 'primary' : ($project->status === 'on_hold' ? 'warning' : 'secondary')) }}">
                                 {{ ucfirst(str_replace('_', ' ', $project->status)) }}
                             </span>
                         </span>
@@ -78,10 +78,6 @@
                     </div>
                     @endif
                     @if(showPrices())
-                    <div class="info-item">
-                        <span class="info-label">Actual Cost</span>
-                        <span class="info-value">₱{{ number_format($project->actual_cost ?? 0, 2) }}</span>
-                    </div>
                     @endif
                     <div class="info-item full-width">
                         <span class="info-label">Progress</span>
@@ -126,7 +122,6 @@
                                     <th>Number</th>
                                     <th>Description</th>
                                     <th>Additional Days</th>
-                                    <th>Additional Cost</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -136,9 +131,8 @@
                                         <td><span class="font-monospace">{{ $co->change_order_number }}</span></td>
                                         <td>{{ Str::limit($co->description, 50) }}</td>
                                         <td>{{ $co->additional_days }} days</td>
-                                        <td>₱{{ number_format($co->additional_cost, 2) }}</td>
                                         <td>
-                                            <span class="badge badge-{{ $co->status === 'approved' ? 'success' : 'warning' }}">
+                                            <span class="status-text status-text-{{ $co->status === 'approved' ? 'success' : 'warning' }}">
                                                 {{ ucfirst($co->status) }}
                                             </span>
                                         </td>
@@ -185,7 +179,7 @@
                                         <td>{{ Str::limit($pr->purpose, 50) }}</td>
                                         <td>{{ $pr->requestedBy->name ?? 'N/A' }}</td>
                                         <td>
-                                            <span class="badge badge-{{ $pr->status === 'approved' ? 'success' : ($pr->status === 'submitted' ? 'primary' : 'warning') }}">
+                                            <span class="status-text status-text-{{ $pr->status === 'approved' ? 'success' : ($pr->status === 'submitted' ? 'primary' : 'warning') }}">
                                                 {{ ucfirst($pr->status) }}
                                             </span>
                                         </td>
@@ -226,7 +220,6 @@
                                     <th>Quotation Number</th>
                                     <th>PR Number</th>
                                     <th>Supplier</th>
-                                    <th>Total Amount</th>
                                     <th>Status</th>
                                     <th>Quotation Date</th>
                                     <th>Actions</th>
@@ -238,9 +231,8 @@
                                         <td><span class="text-muted font-monospace">{{ $quotation->quotation_number }}</span></td>
                                         <td><span class="font-monospace">{{ $quotation->purchaseRequest->pr_number ?? 'N/A' }}</span></td>
                                         <td>{{ $quotation->supplier->name ?? 'N/A' }}</td>
-                                        <td><strong class="text-success">₱{{ number_format($quotation->total_amount, 2) }}</strong></td>
                                         <td>
-                                            <span class="badge badge-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'warning' : 'secondary') }}">
+                                            <span class="status-text status-text-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'warning' : 'secondary') }}">
                                                 {{ ucfirst($quotation->status) }}
                                             </span>
                                         </td>
@@ -281,7 +273,6 @@
                                     <th>PO Number</th>
                                     <th>PR Number</th>
                                     <th>Supplier</th>
-                                    <th>Total Amount</th>
                                     <th>Status</th>
                                     <th>PO Date</th>
                                     <th>Actions</th>
@@ -293,9 +284,8 @@
                                         <td><span class="text-muted font-monospace">{{ $po->po_number }}</span></td>
                                         <td><span class="font-monospace">{{ $po->purchaseRequest->pr_number ?? 'N/A' }}</span></td>
                                         <td>{{ $po->supplier->name ?? 'N/A' }}</td>
-                                        <td><strong class="text-success">₱{{ number_format($po->total_amount, 2) }}</strong></td>
                                         <td>
-                                            <span class="badge badge-{{ $po->status === 'completed' ? 'success' : ($po->status === 'approved' ? 'primary' : ($po->status === 'pending' ? 'warning' : 'secondary')) }}">
+                                            <span class="status-text status-text-{{ $po->status === 'completed' ? 'success' : ($po->status === 'approved' ? 'primary' : ($po->status === 'pending' ? 'warning' : 'secondary')) }}">
                                                 {{ ucfirst($po->status) }}
                                             </span>
                                         </td>
@@ -562,8 +552,17 @@
         border-bottom: 1px solid #f3f4f6;
     }
     
+    .table-modern tbody tr {
+        transition: background-color 0.2s ease;
+    }
+    
     .table-modern tbody tr:hover {
-        background: #f9fafb;
+        background-color: #dbeafe !important;
+        cursor: pointer;
+    }
+    
+    .table-modern tbody tr:has(.empty-state):hover {
+        background-color: transparent !important;
     }
     
     .empty-state {

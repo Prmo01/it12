@@ -68,7 +68,7 @@
                     <div class="info-item">
                         <span class="info-label">Status</span>
                         <span class="info-value">
-                            <span class="badge badge-{{ $materialIssuance->status === 'issued' ? 'success' : ($materialIssuance->status === 'approved' ? 'primary' : 'warning') }}">
+                            <span class="status-text status-text-{{ $materialIssuance->status === 'issued' ? 'success' : ($materialIssuance->status === 'approved' ? 'primary' : 'warning') }}">
                                 {{ ucfirst($materialIssuance->status) }}
                             </span>
                         </span>
@@ -131,24 +131,10 @@
                                         <span class="fw-semibold">{{ number_format($item->quantity, 2) }}</span>
                                         <span class="text-muted">{{ $item->inventoryItem->unit_of_measure }}</span>
                                     </td>
-                                    @if(showPrices())
-                                    <td>₱{{ number_format($item->unit_cost, 2) }}</td>
-                                    <td><strong class="text-success">₱{{ number_format($item->quantity * $item->unit_cost, 2) }}</strong></td>
-                                    @endif
                                     <td><span class="text-muted">{{ $item->notes ?? '—' }}</span></td>
                                 </tr>
                             @endforeach
                         </tbody>
-                        @if(showPrices())
-                        <tfoot>
-                            <tr class="table-footer">
-                                <th colspan="3" class="text-end">Total Amount:</th>
-                                <th colspan="2" class="text-success">
-                                    ₱{{ number_format($materialIssuance->items->sum(function($item) { return $item->quantity * $item->unit_cost; }), 2) }}
-                                </th>
-                            </tr>
-                        </tfoot>
-                        @endif
                     </table>
                 </div>
             </div>

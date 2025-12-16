@@ -168,12 +168,16 @@
     }
     
     .table-modern tbody tr {
-        transition: all 0.2s ease;
+        transition: background-color 0.2s ease;
     }
     
     .table-modern tbody tr:hover {
-        background: #f9fafb;
-        transform: scale(1.001);
+        background-color: #dbeafe !important;
+        cursor: pointer;
+    }
+    
+    .table-modern tbody tr:has(.empty-state):hover {
+        background-color: transparent !important;
     }
     
     .action-buttons {

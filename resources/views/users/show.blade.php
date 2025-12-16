@@ -53,7 +53,7 @@
                     <div class="info-item">
                         <span class="info-label">Account Status</span>
                         <span class="info-value">
-                            <span class="badge badge-success">Active</span>
+                            <span class="status-text status-text-success">Active</span>
                         </span>
                     </div>
                 </div>

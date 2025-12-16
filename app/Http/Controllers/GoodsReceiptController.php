@@ -43,7 +43,7 @@ class GoodsReceiptController extends Controller
             $purchaseOrder = PurchaseOrder::with(['items.inventoryItem', 'supplier'])->findOrFail($request->purchase_order_id);
         } else {
             // Get approved purchase orders that haven't been fully received
-            $purchaseOrders = PurchaseOrder::with(['supplier', 'items'])
+            $purchaseOrders = PurchaseOrder::with(['supplier', 'items.inventoryItem'])
                 ->where('status', 'approved')
                 ->orderBy('po_date', 'desc')
                 ->get();
@@ -65,16 +65,22 @@ class GoodsReceiptController extends Controller
             'items.*.quantity_ordered' => 'required|numeric|min:0',
             'items.*.quantity_received' => 'required|numeric|min:0',
             'items.*.quantity_accepted' => 'required|numeric|min:0',
-            'items.*.quantity_rejected' => 'required|numeric|min:0',
+            'items.*.quantity_rejected' => 'nullable|numeric|min:0',
             'items.*.rejection_reason' => 'nullable|string',
         ]);
+        
+        // Normalize items data - set default values for missing fields
+        foreach ($validated['items'] as $key => $item) {
+            $validated['items'][$key]['quantity_rejected'] = $item['quantity_rejected'] ?? 0;
+            $validated['items'][$key]['rejection_reason'] = $item['rejection_reason'] ?? null;
+        }
 
         $validated['gr_number'] = 'GR-' . strtoupper(Str::random(8));
         $validated['status'] = 'draft';
         $validated['received_by'] = auth()->id();
 
         // Get project_code from purchase_order
-        $purchaseOrder = PurchaseOrder::findOrFail($validated['purchase_order_id']);
+        $purchaseOrder = PurchaseOrder::with('purchaseRequest.project')->findOrFail($validated['purchase_order_id']);
         if ($purchaseOrder->project_code) {
             $validated['project_code'] = $purchaseOrder->project_code;
         } elseif ($purchaseOrder->purchaseRequest && $purchaseOrder->purchaseRequest->project) {

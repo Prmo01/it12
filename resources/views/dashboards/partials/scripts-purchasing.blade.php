@@ -165,7 +165,6 @@
                         callbacks: {
                             afterLabel: function(context) {
                                 const supplier = suppliersData[context.dataIndex];
-                                return 'Total: ₱' + parseFloat(supplier.total_amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                             }
                         }
                     }

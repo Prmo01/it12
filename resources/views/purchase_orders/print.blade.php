@@ -233,8 +233,6 @@
                 <th style="width: 5%;">#</th>
                 <th style="width: 40%;">Item Description</th>
                 <th style="width: 10%;">Quantity</th>
-                <th style="width: 15%;">Unit Price</th>
-                <th style="width: 15%;">Total Price</th>
             </tr>
         </thead>
         <tbody>
@@ -251,27 +249,9 @@
                         @endif
                     </td>
                     <td style="text-align: right;">{{ number_format($item->quantity, 2) }}</td>
-                    <td style="text-align: right;">&#8369;{{ number_format($item->unit_price, 2) }}</td>
-                    <td style="text-align: right;"><strong>&#8369;{{ number_format($item->total_price, 2) }}</strong></td>
                 </tr>
             @endforeach
         </tbody>
-        <tfoot>
-            <tr>
-                <th colspan="4" style="text-align: right;">Subtotal:</th>
-                <th style="text-align: right;">&#8369;{{ number_format($purchaseOrder->subtotal, 2) }}</th>
-            </tr>
-            @if($purchaseOrder->tax_amount > 0)
-            <tr>
-                <th colspan="4" style="text-align: right;">Tax (12%):</th>
-                <th style="text-align: right;">&#8369;{{ number_format($purchaseOrder->tax_amount, 2) }}</th>
-            </tr>
-            @endif
-            <tr>
-                <th colspan="4" style="text-align: right;">TOTAL AMOUNT:</th>
-                <th style="text-align: right; font-size: 14px;">&#8369;{{ number_format($purchaseOrder->total_amount, 2) }}</th>
-            </tr>
-        </tfoot>
     </table>
     
     @if($purchaseOrder->terms_conditions)

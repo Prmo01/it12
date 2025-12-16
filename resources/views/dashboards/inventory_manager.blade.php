@@ -17,8 +17,8 @@
 <!-- Stats Cards -->
 <div class="row mb-2">
     <div class="col-md-3 mb-3">
-        <a href="{{ route('inventory.index') }}" class="text-decoration-none" style="color: inherit;">
-            <div class="stat-card stat-card-primary" style="cursor: pointer;">
+        <a href="{{ route('inventory.index') }}" class="stat-card-link">
+            <div class="stat-card stat-card-primary">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -36,8 +36,8 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <a href="{{ route('inventory.index') }}" class="text-decoration-none" style="color: inherit;">
-            <div class="stat-card stat-card-danger" style="cursor: pointer;">
+        <a href="{{ route('inventory.index') }}" class="stat-card-link">
+            <div class="stat-card stat-card-danger">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -55,8 +55,8 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <a href="{{ route('goods-receipts.index') }}" class="text-decoration-none" style="color: inherit;">
-            <div class="stat-card stat-card-warning" style="cursor: pointer;">
+        <a href="{{ route('goods-receipts.index') }}" class="stat-card-link">
+            <div class="stat-card stat-card-warning">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -74,8 +74,8 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <a href="{{ route('goods-returns.index') }}" class="text-decoration-none" style="color: inherit;">
-            <div class="stat-card stat-card-info" style="cursor: pointer;">
+        <a href="{{ route('goods-returns.index') }}" class="stat-card-link">
+            <div class="stat-card stat-card-info">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -224,7 +224,7 @@
                         <div class="activity-item-content">
                             <div class="activity-item-header">
                                 <h6 class="activity-item-title">{{ $receipt->gr_number }}</h6>
-                                <span class="badge badge-{{ $receipt->status === 'approved' ? 'success' : ($receipt->status === 'pending' ? 'warning' : 'secondary') }}">{{ ucfirst($receipt->status) }}</span>
+                                <span class="status-text status-text-{{ $receipt->status === 'approved' ? 'success' : ($receipt->status === 'pending' ? 'warning' : 'secondary') }}">{{ ucfirst($receipt->status) }}</span>
                             </div>
                             <p class="activity-item-meta">
                                 <i class="bi bi-truck"></i> {{ $receipt->supplier->name ?? 'N/A' }} • 
@@ -255,7 +255,7 @@
                         <div class="activity-item-content">
                             <div class="activity-item-header">
                                 <h6 class="activity-item-title">{{ $return->return_number }}</h6>
-                                <span class="badge badge-{{ $return->status === 'approved' ? 'success' : ($return->status === 'pending' ? 'warning' : 'secondary') }}">{{ ucfirst($return->status) }}</span>
+                                <span class="status-text status-text-{{ $return->status === 'approved' ? 'success' : ($return->status === 'pending' ? 'warning' : 'secondary') }}">{{ ucfirst($return->status) }}</span>
                             </div>
                             <p class="activity-item-meta">
                                 <i class="bi bi-arrow-return-left"></i> {{ $return->supplier->name ?? 'N/A' }} • 
@@ -286,7 +286,7 @@
                         <div class="activity-item-content">
                             <div class="activity-item-header">
                                 <h6 class="activity-item-title">{{ $issuance->issuance_number }}</h6>
-                                <span class="badge badge-{{ $issuance->status === 'issued' ? 'success' : ($issuance->status === 'approved' ? 'primary' : 'warning') }}">{{ ucfirst($issuance->status) }}</span>
+                                <span class="status-text status-text-{{ $issuance->status === 'issued' ? 'success' : ($issuance->status === 'approved' ? 'primary' : 'warning') }}">{{ ucfirst($issuance->status) }}</span>
                             </div>
                             <p class="activity-item-meta">
                                 <i class="bi bi-briefcase"></i> {{ $issuance->project->name ?? 'N/A' }} • 

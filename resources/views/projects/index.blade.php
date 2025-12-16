@@ -85,7 +85,7 @@
                             <td><span class="text-muted">{{ $project->start_date->format('M d, Y') }}</span></td>
                             <td><span class="text-muted">{{ $project->end_date->format('M d, Y') }}</span></td>
                             <td>
-                                <span class="badge badge-{{ $project->status === 'active' ? 'success' : ($project->status === 'completed' ? 'primary' : ($project->status === 'on_hold' ? 'warning' : 'secondary')) }}">
+                                <span class="status-text status-text-{{ $project->status === 'active' ? 'success' : ($project->status === 'completed' ? 'primary' : ($project->status === 'on_hold' ? 'warning' : 'secondary')) }}">
                                     {{ ucfirst(str_replace('_', ' ', $project->status)) }}
                                 </span>
                             </td>
@@ -189,12 +189,16 @@
     }
     
     .table-modern tbody tr {
-        transition: all 0.2s ease;
+        transition: background-color 0.2s ease;
     }
     
     .table-modern tbody tr:hover {
-        background: #f9fafb;
-        transform: scale(1.001);
+        background-color: #dbeafe !important;
+        cursor: pointer;
+    }
+    
+    .table-modern tbody tr:has(.empty-state):hover {
+        background-color: transparent !important;
     }
     
     .action-buttons {

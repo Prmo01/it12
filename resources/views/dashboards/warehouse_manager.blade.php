@@ -17,8 +17,8 @@
 <!-- Stats Cards -->
 <div class="row mb-2">
     <div class="col-md-3 mb-3">
-        <a href="{{ route('goods-receipts.index') }}" class="text-decoration-none" style="color: inherit;">
-            <div class="stat-card stat-card-warning" style="cursor: pointer;">
+        <a href="{{ route('goods-receipts.index') }}" class="stat-card-link">
+            <div class="stat-card stat-card-warning">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -36,8 +36,8 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <a href="{{ route('goods-returns.index') }}" class="text-decoration-none" style="color: inherit;">
-            <div class="stat-card stat-card-primary" style="cursor: pointer;">
+        <a href="{{ route('goods-returns.index') }}" class="stat-card-link">
+            <div class="stat-card stat-card-primary">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -55,37 +55,41 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="stat-card stat-card-success">
-            <div class="stat-card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div class="stat-content">
-                        <p class="stat-label">Approved Today</p>
-                        <h2 class="stat-value">{{ $approvedToday }}</h2>
-                        <small class="stat-change text-muted">Quality approved</small>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="bi bi-check-circle"></i>
+        <a href="{{ route('goods-receipts.index', ['status' => 'approved']) }}" class="stat-card-link">
+            <div class="stat-card stat-card-success">
+                <div class="stat-card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="stat-content">
+                            <p class="stat-label">Approved Today</p>
+                            <h2 class="stat-value">{{ $approvedToday }}</h2>
+                            <small class="stat-change text-muted">Quality approved</small>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="stat-card stat-card-danger">
-            <div class="stat-card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div class="stat-content">
-                        <p class="stat-label">Rejected Today</p>
-                        <h2 class="stat-value">{{ $rejectedToday }}</h2>
-                        <small class="stat-change text-muted">Failed quality check</small>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="bi bi-x-circle"></i>
+        <a href="{{ route('goods-receipts.index', ['status' => 'rejected']) }}" class="stat-card-link">
+            <div class="stat-card stat-card-danger">
+                <div class="stat-card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="stat-content">
+                            <p class="stat-label">Rejected Today</p>
+                            <h2 class="stat-value">{{ $rejectedToday }}</h2>
+                            <small class="stat-change text-muted">Failed quality check</small>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="bi bi-x-circle"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
@@ -187,7 +191,7 @@
                         <div class="activity-item-content">
                             <div class="activity-item-header">
                                 <h6 class="activity-item-title">{{ $receipt->gr_number }}</h6>
-                                <span class="badge badge-{{ $receipt->status === 'approved' ? 'success' : ($receipt->status === 'pending' ? 'warning' : 'secondary') }}">{{ ucfirst($receipt->status) }}</span>
+                                <span class="status-text status-text-{{ $receipt->status === 'approved' ? 'success' : ($receipt->status === 'pending' ? 'warning' : 'secondary') }}">{{ ucfirst($receipt->status) }}</span>
                             </div>
                             <p class="activity-item-meta">
                                 <i class="bi bi-truck"></i> {{ $receipt->purchaseOrder->supplier->name ?? 'N/A' }} • 
@@ -218,7 +222,7 @@
                         <div class="activity-item-content">
                             <div class="activity-item-header">
                                 <h6 class="activity-item-title">{{ $return->return_number }}</h6>
-                                <span class="badge badge-{{ $return->status === 'approved' ? 'success' : ($return->status === 'pending' ? 'warning' : 'secondary') }}">{{ ucfirst($return->status) }}</span>
+                                <span class="status-text status-text-{{ $return->status === 'approved' ? 'success' : ($return->status === 'pending' ? 'warning' : 'secondary') }}">{{ ucfirst($return->status) }}</span>
                             </div>
                             <p class="activity-item-meta">
                                 <i class="bi bi-arrow-return-left"></i> {{ $return->goodsReceipt->purchaseOrder->supplier->name ?? 'N/A' }} • 

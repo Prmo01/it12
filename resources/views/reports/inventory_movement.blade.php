@@ -9,12 +9,11 @@
         <p class="text-muted mb-0">Track stock movements and inventory history</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="{{ route('reports.inventory-movement', array_merge(request()->all(), ['export' => 'pdf'])) }}" class="btn btn-danger">
+        @if($data->isNotEmpty())
+        <a href="{{ route('reports.inventory-movement', array_merge(request()->all(), ['export' => 'pdf'])) }}" class="btn btn-outline-secondary">
             <i class="bi bi-file-earmark-pdf"></i> Export PDF
         </a>
-        <a href="{{ route('reports.inventory-movement', array_merge(request()->all(), ['export' => 'excel'])) }}" class="btn btn-success">
-            <i class="bi bi-file-earmark-spreadsheet"></i> Export Excel
-        </a>
+        @endif
         <a href="{{ route('reports.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back
         </a>
@@ -96,8 +95,25 @@
                                 <small class="text-muted font-monospace">{{ $movement->inventoryItem->item_code ?? '' }}</small>
                             </td>
                             <td>
-                                <span class="badge badge-{{ str_contains($movement->movement_type, 'in') ? 'success' : 'danger' }}">
-                                    <i class="bi bi-{{ str_contains($movement->movement_type, 'in') ? 'arrow-down' : 'arrow-up' }}"></i>
+                                @php
+                                    $movementTypeLower = strtolower($movement->movement_type);
+                                    $isAdjustment = str_contains($movementTypeLower, 'adjustment');
+                                    $hasIn = str_contains($movementTypeLower, 'in');
+                                    $hasOut = str_contains($movementTypeLower, 'out');
+                                    
+                                    if ($isAdjustment) {
+                                        $typeColor = 'text-warning';
+                                        $arrowIcon = $hasIn ? 'bi-arrow-down' : ($hasOut ? 'bi-arrow-up' : 'bi-dash-circle');
+                                    } elseif ($hasIn && !$isAdjustment) {
+                                        $typeColor = 'text-success';
+                                        $arrowIcon = 'bi-arrow-down';
+                                    } else {
+                                        $typeColor = 'text-danger';
+                                        $arrowIcon = 'bi-arrow-up';
+                                    }
+                                @endphp
+                                <span class="movement-type-text {{ $typeColor }}" style="font-weight: 600;">
+                                    <i class="bi {{ $arrowIcon }}"></i>
                                     {{ ucfirst(str_replace('_', ' ', $movement->movement_type)) }}
                                 </span>
                             </td>
@@ -213,28 +229,25 @@
         transform: scale(1.001);
     }
     
-    .badge-success {
-        background: #10b981;
-        color: #ffffff;
-        padding: 0.375rem 0.75rem;
-        border-radius: 6px;
-        font-size: 0.75rem;
+    /* Movement Type Text Styling */
+    .movement-type-text {
+        font-size: 0.875rem;
         font-weight: 600;
         display: inline-flex;
         align-items: center;
         gap: 0.375rem;
     }
     
-    .badge-danger {
-        background: #ef4444;
-        color: #ffffff;
-        padding: 0.375rem 0.75rem;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.375rem;
+    .movement-type-text.text-success {
+        color: #10b981;
+    }
+    
+    .movement-type-text.text-danger {
+        color: #ef4444;
+    }
+    
+    .movement-type-text.text-warning {
+        color: #f59e0b;
     }
     
     .empty-state {

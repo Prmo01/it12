@@ -176,7 +176,7 @@
                     <div class="po-item-header">
                         <div class="po-item-info">
                             <span class="po-number">{{ $po->po_number }}</span>
-                            <span class="po-supplier">{{ $po->supplier->name }}</span>
+                            <span class="po-supplier">{{ $po->supplier->name ?? 'N/A' }}</span>
                         </div>
                         <div class="po-item-actions">
                             <span class="po-date">{{ $po->po_date->format('M d, Y') }}</span>
@@ -184,7 +184,6 @@
                         </div>
                     </div>
                     <div class="po-item-details">
-                        <span class="po-amount">₱{{ number_format($po->total_amount, 2) }}</span>
                         <span class="po-items">{{ $po->items->count() }} item(s)</span>
                     </div>
                 </div>

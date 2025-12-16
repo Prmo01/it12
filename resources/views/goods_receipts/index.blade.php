@@ -45,19 +45,21 @@
                                     $suppliers = $gr->purchaseOrder->items->pluck('supplier')->filter()->unique('id');
                                 @endphp
                                 @if($suppliers->count() > 0)
-                                    @foreach($suppliers->take(2) as $supplier)
-                                        <span class="badge badge-info d-inline-block mb-1">{{ $supplier->name }}</span>
-                                    @endforeach
-                                    @if($suppliers->count() > 2)
-                                        <span class="badge badge-secondary">+{{ $suppliers->count() - 2 }} more</span>
-                                    @endif
+                                    <div class="d-flex flex-column gap-1">
+                                        @foreach($suppliers->take(2) as $supplier)
+                                            <span class="supplier-text">{{ $supplier->name }}</span>
+                                        @endforeach
+                                        @if($suppliers->count() > 2)
+                                            <span class="text-muted small">+{{ $suppliers->count() - 2 }} more</span>
+                                        @endif
+                                    </div>
                                 @else
                                     <span class="text-muted">N/A</span>
                                 @endif
                             </td>
                             <td><span class="text-muted">{{ $gr->gr_date->format('M d, Y') }}</span></td>
                             <td>
-                                <span class="badge badge-{{ $gr->status === 'approved' ? 'success' : ($gr->status === 'pending' ? 'primary' : 'warning') }}">
+                                <span class="status-text status-text-{{ $gr->status === 'approved' ? 'success' : ($gr->status === 'pending' ? 'primary' : 'warning') }}">
                                     {{ ucfirst($gr->status) }}
                                 </span>
                             </td>

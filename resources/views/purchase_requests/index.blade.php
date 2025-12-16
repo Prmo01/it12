@@ -34,7 +34,7 @@
                             </td>
                             <td>{{ $pr->requestedBy->name ?? 'N/A' }}</td>
                             <td>
-                                <span class="badge badge-{{ $pr->status === 'approved' ? 'success' : ($pr->status === 'submitted' ? 'primary' : 'warning') }}">
+                                <span class="status-text status-text-{{ $pr->status === 'approved' ? 'success' : ($pr->status === 'submitted' ? 'primary' : 'warning') }}">
                                     {{ ucfirst($pr->status) }}
                                 </span>
                             </td>

@@ -33,7 +33,7 @@
                             <td><span class="text-muted font-monospace">{{ $quotation->quotation_number }}</span></td>
                             <td>
                                 @if($quotation->project_code)
-                                    <span class="badge badge-info font-monospace">{{ $quotation->project_code }}</span>
+                                    <span class="project-code-text">{{ $quotation->project_code }}</span>
                                 @else
                                     <span class="text-muted">N/A</span>
                                 @endif
@@ -58,12 +58,14 @@
                                     $suppliers = $quotation->items->pluck('supplier')->filter()->unique('id');
                                 @endphp
                                 @if($suppliers->count() > 0)
-                                    @foreach($suppliers->take(2) as $supplier)
-                                        <span class="badge badge-info d-inline-block mb-1">{{ $supplier->name }}</span>
-                                    @endforeach
-                                    @if($suppliers->count() > 2)
-                                        <span class="badge badge-secondary">+{{ $suppliers->count() - 2 }} more</span>
-                                    @endif
+                                    <div class="d-flex flex-column gap-1">
+                                        @foreach($suppliers->take(2) as $supplier)
+                                            <span class="supplier-text">{{ $supplier->name }}</span>
+                                        @endforeach
+                                        @if($suppliers->count() > 2)
+                                            <span class="text-muted small">+{{ $suppliers->count() - 2 }} more</span>
+                                        @endif
+                                    </div>
                                 @else
                                     <span class="text-muted">N/A</span>
                                 @endif
@@ -74,7 +76,7 @@
                                 <small class="text-muted">units</small>
                             </td>
                             <td>
-                                <span class="badge badge-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'primary' : 'warning') }}">
+                                <span class="status-text status-text-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'primary' : 'warning') }}">
                                     {{ ucfirst($quotation->status) }}
                                 </span>
                             </td>

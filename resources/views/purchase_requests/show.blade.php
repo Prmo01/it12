@@ -76,7 +76,7 @@
                     <div class="info-item">
                         <span class="info-label">Status</span>
                         <span class="info-value">
-                            <span class="badge badge-{{ $purchaseRequest->status === 'approved' ? 'success' : ($purchaseRequest->status === 'submitted' ? 'primary' : 'warning') }}">
+                            <span class="status-text status-text-{{ $purchaseRequest->status === 'approved' ? 'success' : ($purchaseRequest->status === 'submitted' ? 'primary' : 'warning') }}">
                                 {{ ucfirst($purchaseRequest->status) }}
                             </span>
                         </span>
@@ -121,10 +121,6 @@
                             <tr>
                                 <th>Item</th>
                                 <th>Quantity</th>
-                                @if(showPrices())
-                                <th>Unit Cost</th>
-                                <th>Total</th>
-                                @endif
                                 @if($purchaseRequest->items->where('specifications', '!=', null)->count() > 0)
                                 <th>Specifications</th>
                                 @endif
@@ -141,24 +137,12 @@
                                         <span class="fw-semibold">{{ number_format($item->quantity, 2) }}</span>
                                         <span class="text-muted">{{ $item->inventoryItem->unit_of_measure }}</span>
                                     </td>
-                                    @if(showPrices())
-                                    <td>₱{{ number_format($item->unit_cost, 2) }}</td>
-                                    <td><strong class="text-success">₱{{ number_format($item->quantity * $item->unit_cost, 2) }}</strong></td>
-                                    @endif
                                     @if($purchaseRequest->items->where('specifications', '!=', null)->count() > 0)
                                     <td><span class="text-muted">{{ $item->specifications ?? '—' }}</span></td>
                                     @endif
                                 </tr>
                             @endforeach
                         </tbody>
-                        <tfoot>
-                            <tr class="table-footer">
-                                <th colspan="{{ $purchaseRequest->items->where('specifications', '!=', null)->count() > 0 ? '3' : '2' }}" class="text-end">Total Amount:</th>
-                                <th colspan="{{ $purchaseRequest->items->where('specifications', '!=', null)->count() > 0 ? '2' : '2' }}" class="text-success">
-                                    ₱{{ number_format($purchaseRequest->items->sum(function($item) { return $item->quantity * $item->unit_cost; }), 2) }}
-                                </th>
-                            </tr>
-                        </tfoot>
                     </table>
                 </div>
             </div>
@@ -193,7 +177,7 @@
                                     <td>{{ $quotation->supplier->name }}</td>
                                     <td><strong>₱{{ number_format($quotation->total_amount, 2) }}</strong></td>
                                     <td>
-                                        <span class="badge badge-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'primary' : 'secondary') }}">
+                                        <span class="status-text status-text-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'primary' : 'secondary') }}">
                                             {{ ucfirst($quotation->status) }}
                                         </span>
                                     </td>

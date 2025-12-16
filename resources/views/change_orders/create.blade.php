@@ -93,21 +93,7 @@
                         @enderror
                         <small class="form-help-text">Number of additional days required</small>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label-custom">
-                            <i class="bi bi-cash-stack"></i> Additional Cost (₱) <span class="text-danger">*</span>
-                        </label>
-                        <div class="input-group-custom">
-                            <span class="input-group-text-custom">₱</span>
-                            <input type="number" step="0.01" min="0" name="additional_cost" class="form-control-custom @error('additional_cost') is-invalid @enderror" value="{{ old('additional_cost', 0) }}" placeholder="0.00" required>
-                        </div>
-                        @error('additional_cost')
-                            <div class="invalid-feedback-custom">
-                                <i class="bi bi-exclamation-circle"></i> {{ $message }}
-                            </div>
-                        @enderror
-                        <small class="form-help-text">Additional cost for this work</small>
-                    </div>
+                    <input type="hidden" name="additional_cost" value="0">
                 </div>
             </div>
             

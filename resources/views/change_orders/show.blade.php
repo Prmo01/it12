@@ -63,7 +63,7 @@
                     <div class="info-item">
                         <span class="info-label">Status</span>
                         <span class="info-value">
-                            <span class="badge badge-{{ $changeOrder->status === 'approved' ? 'success' : ($changeOrder->status === 'rejected' ? 'danger' : 'warning') }}">
+                            <span class="status-text status-text-{{ $changeOrder->status === 'approved' ? 'success' : ($changeOrder->status === 'rejected' ? 'danger' : 'warning') }}">
                                 {{ ucfirst($changeOrder->status) }}
                             </span>
                         </span>
@@ -77,10 +77,6 @@
                         <span class="info-value">
                             <span class="badge badge-info">{{ $changeOrder->additional_days }} days</span>
                         </span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Additional Cost</span>
-                        <span class="info-value text-success fw-semibold">₱{{ number_format($changeOrder->additional_cost, 2) }}</span>
                     </div>
                     <div class="info-item full-width">
                         <span class="info-label">Description</span>

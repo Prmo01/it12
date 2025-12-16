@@ -92,6 +92,51 @@
             font-size: 0.875rem; /* 15.75px - increased */
         }
         
+        /* Status Text (replacing badges for better UX) */
+        .status-text {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0;
+            border-radius: 0;
+            display: inline-block;
+        }
+        
+        .status-text-success {
+            color: #10b981;
+        }
+        
+        .status-text-secondary {
+            color: #6b7280;
+        }
+        
+        .status-text-info {
+            color: #3b82f6;
+        }
+        
+        .status-text-primary {
+            color: #2563eb;
+        }
+        
+        .status-text-warning {
+            color: #f59e0b;
+        }
+        
+        .status-text-danger {
+            color: #ef4444;
+        }
+        
+        /* Project Code and Supplier Text (emphasized but not in boxes) */
+        .project-code-text {
+            color: #3b82f6;
+            font-weight: 600;
+            font-family: monospace;
+        }
+        
+        .supplier-text {
+            color: #2563eb;
+            font-weight: 600;
+        }
+        
         /* Normalize small text */
         small, .small {
             font-size: 0.9375rem; /* 16.875px - increased */

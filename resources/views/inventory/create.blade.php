@@ -73,25 +73,7 @@
                         @enderror
                         <small class="form-help-text">Unit of measurement (pcs, kg, m, etc.)</small>
                     </div>
-                    @if(showPrices())
-                    <div class="col-md-4">
-                        <label class="form-label-custom">
-                            <i class="bi bi-cash-stack"></i> Unit Cost <span class="text-danger">*</span>
-                        </label>
-                        <div class="input-group-custom">
-                            <span class="input-group-text-custom">₱</span>
-                            <input type="number" step="0.01" min="0" name="unit_cost" class="form-control-custom @error('unit_cost') is-invalid @enderror" value="{{ old('unit_cost') }}" placeholder="0.00" required>
-                        </div>
-                        @error('unit_cost')
-                            <div class="invalid-feedback-custom">
-                                <i class="bi bi-exclamation-circle"></i> {{ $message }}
-                            </div>
-                        @enderror
-                        <small class="form-help-text">Cost per unit</small>
-                    </div>
-                    @else
                     <input type="hidden" name="unit_cost" value="0">
-                    @endif
                     <div class="col-md-4">
                         <label class="form-label-custom">
                             <i class="bi bi-toggle-on"></i> Status <span class="text-danger">*</span>

@@ -70,7 +70,7 @@
                     <div class="info-item">
                         <span class="info-label">Status</span>
                         <span class="info-value">
-                            <span class="badge badge-{{ $goodsReceipt->status === 'approved' ? 'success' : ($goodsReceipt->status === 'pending' ? 'primary' : 'warning') }}">
+                            <span class="status-text status-text-{{ $goodsReceipt->status === 'approved' ? 'success' : ($goodsReceipt->status === 'pending' ? 'primary' : 'warning') }}">
                                 {{ ucfirst($goodsReceipt->status) }}
                             </span>
                         </span>
@@ -131,7 +131,7 @@
                                     </td>
                                     <td>
                                         @if($item->purchaseOrderItem && $item->purchaseOrderItem->supplier)
-                                            <span class="badge badge-info">{{ $item->purchaseOrderItem->supplier->name }}</span>
+                                            <span class="supplier-text">{{ $item->purchaseOrderItem->supplier->name }}</span>
                                         @else
                                             <span class="text-muted">N/A</span>
                                         @endif

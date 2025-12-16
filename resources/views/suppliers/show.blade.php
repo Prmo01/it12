@@ -43,7 +43,7 @@
                     <div class="info-item">
                         <span class="info-label">Status</span>
                         <span class="info-value">
-                            <span class="badge badge-{{ $supplier->status === 'active' ? 'success' : 'secondary' }}">
+                            <span class="status-text status-text-{{ $supplier->status === 'active' ? 'success' : 'secondary' }}">
                                 {{ ucfirst($supplier->status) }}
                             </span>
                         </span>

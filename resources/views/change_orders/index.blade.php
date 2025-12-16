@@ -21,7 +21,6 @@
                         <th>Project</th>
                         <th>Description</th>
                         <th>Additional Days</th>
-                        <th>Additional Cost</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -40,10 +39,7 @@
                                 <span class="badge badge-info">{{ $co->additional_days }} days</span>
                             </td>
                             <td>
-                                <span class="fw-semibold text-success">₱{{ number_format($co->additional_cost, 2) }}</span>
-                            </td>
-                            <td>
-                                <span class="badge badge-{{ $co->status === 'approved' ? 'success' : ($co->status === 'rejected' ? 'danger' : 'warning') }}">
+                                <span class="status-text status-text-{{ $co->status === 'approved' ? 'success' : ($co->status === 'rejected' ? 'danger' : 'warning') }}">
                                     {{ ucfirst($co->status) }}
                                 </span>
                             </td>
@@ -66,7 +62,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-5">
+                            <td colspan="6" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="bi bi-file-earmark-plus"></i>
                                     <p class="mt-3 mb-0">No additional projects found</p>

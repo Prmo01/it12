@@ -21,7 +21,6 @@
                         <th>Project Code</th>
                         <th>Suppliers</th>
                         <th>Date</th>
-                        <th>Total Amount</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -32,7 +31,7 @@
                             <td><span class="text-muted font-monospace">{{ $po->po_number }}</span></td>
                             <td>
                                 @if($po->project_code)
-                                    <span class="badge badge-info font-monospace">{{ $po->project_code }}</span>
+                                    <span class="project-code-text">{{ $po->project_code }}</span>
                                 @else
                                     <span class="text-muted">N/A</span>
                                 @endif
@@ -42,20 +41,21 @@
                                     $suppliers = $po->items->pluck('supplier')->filter()->unique('id');
                                 @endphp
                                 @if($suppliers->count() > 0)
-                                    @foreach($suppliers->take(2) as $supplier)
-                                        <span class="badge badge-info d-inline-block mb-1">{{ $supplier->name }}</span>
-                                    @endforeach
-                                    @if($suppliers->count() > 2)
-                                        <span class="badge badge-secondary">+{{ $suppliers->count() - 2 }} more</span>
-                                    @endif
+                                    <div class="d-flex flex-column gap-1">
+                                        @foreach($suppliers->take(2) as $supplier)
+                                            <span class="supplier-text">{{ $supplier->name }}</span>
+                                        @endforeach
+                                        @if($suppliers->count() > 2)
+                                            <span class="text-muted small">+{{ $suppliers->count() - 2 }} more</span>
+                                        @endif
+                                    </div>
                                 @else
                                     <span class="text-muted">N/A</span>
                                 @endif
                             </td>
                             <td><span class="text-muted">{{ $po->po_date->format('M d, Y') }}</span></td>
-                            <td><strong>₱{{ number_format($po->total_amount, 2) }}</strong></td>
                             <td>
-                                <span class="badge badge-{{ $po->status === 'approved' ? 'success' : ($po->status === 'pending' ? 'primary' : ($po->status === 'completed' ? 'info' : 'warning')) }}">
+                                <span class="status-text status-text-{{ $po->status === 'approved' ? 'success' : ($po->status === 'pending' ? 'primary' : ($po->status === 'completed' ? 'info' : 'warning')) }}">
                                     {{ ucfirst($po->status) }}
                                 </span>
                             </td>
@@ -89,7 +89,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5">
+                            <td colspan="5" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="bi bi-cart-x"></i>
                                     <p class="mt-3 mb-0">No purchase orders found</p>

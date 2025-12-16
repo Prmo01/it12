@@ -36,7 +36,7 @@
                     <div class="info-item">
                         <span class="info-label">Status</span>
                         <span class="info-value">
-                            <span class="badge badge-{{ $inventory->status === 'active' ? 'success' : 'secondary' }}">
+                            <span class="status-text status-text-{{ $inventory->status === 'active' ? 'success' : 'secondary' }}">
                                 {{ ucfirst($inventory->status) }}
                             </span>
                         </span>
@@ -57,12 +57,6 @@
                         <span class="info-label">Unit of Measure</span>
                         <span class="info-value">{{ $inventory->unit_of_measure }}</span>
                     </div>
-                    @if(showPrices())
-                    <div class="info-item">
-                        <span class="info-label">Unit Cost</span>
-                        <span class="info-value">₱{{ number_format($inventory->unit_cost, 2) }}</span>
-                    </div>
-                    @endif
                     <div class="info-item full-width">
                         <span class="info-label">Current Stock</span>
                         <div class="stock-display">
@@ -106,7 +100,6 @@
                                 <th>PR Number</th>
                                 <th>Project</th>
                                 <th>Quantity</th>
-                                <th>Unit Cost</th>
                                 <th>Status</th>
                                 <th>Requested By</th>
                                 <th>Created At</th>
@@ -135,13 +128,6 @@
                                         <span class="text-muted">{{ $inventory->unit_of_measure }}</span>
                                     </td>
                                     <td>
-                                        @if(showPrices())
-                                            <span class="fw-semibold">₱{{ number_format($prItem->unit_cost ?? 0, 2) }}</span>
-                                        @else
-                                            <span class="text-muted">N/A</span>
-                                        @endif
-                                    </td>
-                                    <td>
                                         @php
                                             $statusColors = [
                                                 'draft' => 'secondary',
@@ -152,7 +138,7 @@
                                             ];
                                             $statusColor = $statusColors[$pr->status] ?? 'secondary';
                                         @endphp
-                                        <span class="badge badge-{{ $statusColor }}">
+                                        <span class="status-text status-text-{{ $statusColor }}">
                                             {{ ucfirst($pr->status) }}
                                         </span>
                                     </td>

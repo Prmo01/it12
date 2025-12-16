@@ -61,7 +61,7 @@
                 </div>
                 <div class="text-end">
                     <div class="quotation-total">{{ number_format($quotation->items->sum('quantity'), 2) }} units</div>
-                    <span class="badge badge-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'primary' : 'secondary') }}">
+                    <span class="status-text status-text-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'primary' : 'secondary') }}">
                         {{ ucfirst($quotation->status) }}
                     </span>
                 </div>

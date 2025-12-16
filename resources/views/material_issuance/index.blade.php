@@ -88,7 +88,7 @@
                             </td>
                             <td><span class="text-muted">{{ $issuance->issuance_date->format('M d, Y') }}</span></td>
                             <td>
-                                <span class="badge badge-{{ $issuance->status === 'issued' ? 'success' : ($issuance->status === 'approved' ? 'primary' : ($issuance->status === 'completed' ? 'info' : 'warning')) }}">
+                                <span class="status-text status-text-{{ $issuance->status === 'issued' ? 'success' : ($issuance->status === 'approved' ? 'primary' : ($issuance->status === 'completed' ? 'info' : 'warning')) }}">
                                     {{ ucfirst($issuance->status) }}
                                 </span>
                             </td>

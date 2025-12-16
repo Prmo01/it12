@@ -10,11 +10,8 @@
     </div>
     <div class="d-flex gap-2">
         @if($data->isNotEmpty())
-        <a href="{{ route('reports.supplier-performance', array_merge(request()->all(), ['export' => 'pdf'])) }}" class="btn btn-danger">
+        <a href="{{ route('reports.supplier-performance', array_merge(request()->all(), ['export' => 'pdf'])) }}" class="btn btn-outline-secondary">
             <i class="bi bi-file-earmark-pdf"></i> Export PDF
-        </a>
-        <a href="{{ route('reports.supplier-performance', array_merge(request()->all(), ['export' => 'csv'])) }}" class="btn btn-success">
-            <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
         </a>
         @endif
         <a href="{{ route('reports.index') }}" class="btn btn-secondary">
@@ -61,7 +58,6 @@
                         <th>Supplier</th>
                         <th>Total Orders</th>
                         <th>Completed Orders</th>
-                        <th>Total Amount</th>
                         <th>On-Time Deliveries</th>
                         <th>On-Time Rate</th>
                     </tr>
@@ -78,9 +74,6 @@
                             </td>
                             <td>
                                 <span class="badge badge-success">{{ $item['completed_orders'] }}</span>
-                            </td>
-                            <td>
-                                <span class="fw-semibold">₱{{ number_format($item['total_amount'], 2) }}</span>
                             </td>
                             <td>
                                 <span class="badge badge-primary">{{ $item['on_time_deliveries'] }}</span>
@@ -122,10 +115,6 @@
                 <div class="col-md-3">
                     <div class="fw-semibold text-muted">Total Orders</div>
                     <div class="h4 mb-0">{{ $data->sum('total_orders') }}</div>
-                </div>
-                <div class="col-md-3">
-                    <div class="fw-semibold text-muted">Total Amount</div>
-                    <div class="h4 mb-0">₱{{ number_format($data->sum('total_amount'), 2) }}</div>
                 </div>
                 <div class="col-md-3">
                     <div class="fw-semibold text-muted">Avg On-Time Rate</div>

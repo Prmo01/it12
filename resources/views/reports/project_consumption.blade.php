@@ -10,11 +10,8 @@
     </div>
     <div class="d-flex gap-2">
         @if($data->isNotEmpty() && isset($filters['project_id']))
-        <a href="{{ route('reports.project-consumption', array_merge(request()->all(), ['export' => 'pdf'])) }}" class="btn btn-danger">
+        <a href="{{ route('reports.project-consumption', array_merge(request()->all(), ['export' => 'pdf'])) }}" class="btn btn-outline-secondary">
             <i class="bi bi-file-earmark-pdf"></i> Export PDF
-        </a>
-        <a href="{{ route('reports.project-consumption', array_merge(request()->all(), ['export' => 'csv'])) }}" class="btn btn-success">
-            <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
         </a>
         @endif
         <a href="{{ route('reports.index') }}" class="btn btn-secondary">
