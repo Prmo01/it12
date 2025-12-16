@@ -40,7 +40,8 @@ class MaterialRequisitionController extends Controller
         if ($request->has('project_id')) {
             $project = Project::findOrFail($request->project_id);
         }
-        $projects = Project::orderBy('name')->get();
+        // Exclude completed projects - you shouldn't create purchase requests for completed projects
+        $projects = Project::where('status', '!=', 'completed')->orderBy('name')->get();
         return view('purchase_requests.create', compact('project', 'projects'));
     }
 
@@ -56,6 +57,18 @@ class MaterialRequisitionController extends Controller
             'items.*.unit_cost' => 'nullable|numeric|min:0',
             'items.*.specifications' => 'nullable|string',
         ]);
+
+        // Check for duplicate items
+        $itemIds = array_column($validated['items'], 'inventory_item_id');
+        $duplicates = array_diff_assoc($itemIds, array_unique($itemIds));
+        
+        if (!empty($duplicates)) {
+            $duplicateIndexes = array_keys($duplicates);
+            $firstDuplicateIndex = $duplicateIndexes[0];
+            return back()->withErrors([
+                "items.{$firstDuplicateIndex}.inventory_item_id" => 'This item has already been selected. Each item can only be added once to a purchase request.'
+            ])->withInput();
+        }
 
         $validated['pr_number'] = 'PR-' . strtoupper(Str::random(8));
         $validated['status'] = 'draft';

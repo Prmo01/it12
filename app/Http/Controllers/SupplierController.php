@@ -40,11 +40,13 @@ class SupplierController extends Controller
             'name' => 'required|string|max:255',
             'contact_person' => 'nullable|string|max:255',
             'email' => 'nullable|email',
-            'phone' => 'nullable|string',
+            'phone' => 'nullable|string|regex:/^\d{11}$/',
             'address' => 'nullable|string',
             'tax_id' => 'nullable|string',
             'status' => 'required|in:active,inactive',
             'notes' => 'nullable|string',
+        ], [
+            'phone.regex' => 'Phone number must be exactly 11 digits.',
         ]);
 
         $validated['code'] = 'SUP-' . strtoupper(Str::random(8));
@@ -142,11 +144,13 @@ class SupplierController extends Controller
             'name' => 'required|string|max:255',
             'contact_person' => 'nullable|string|max:255',
             'email' => 'nullable|email',
-            'phone' => 'nullable|string',
+            'phone' => 'nullable|string|regex:/^\d{11}$/',
             'address' => 'nullable|string',
             'tax_id' => 'nullable|string',
             'status' => 'required|in:active,inactive',
             'notes' => 'nullable|string',
+        ], [
+            'phone.regex' => 'Phone number must be exactly 11 digits.',
         ]);
 
         $supplier->update($validated);

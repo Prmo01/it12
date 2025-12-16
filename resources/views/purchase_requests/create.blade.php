@@ -421,6 +421,42 @@
 <script>
     let itemIndex = 1;
     
+    // Function to get all currently selected item IDs
+    function getSelectedItemIds(excludeSelect = null) {
+        const selectedIds = [];
+        document.querySelectorAll('select[name*="[inventory_item_id]"]').forEach(select => {
+            if (select !== excludeSelect && select.value) {
+                selectedIds.push(select.value);
+            }
+        });
+        return selectedIds;
+    }
+    
+    // Function to update dropdown options to hide already selected items
+    function updateDropdownOptions() {
+        document.querySelectorAll('select[name*="[inventory_item_id]"]').forEach(select => {
+            const selectedIds = getSelectedItemIds(select);
+            const currentValue = select.value;
+            
+            select.querySelectorAll('option').forEach(option => {
+                if (option.value === '' || option.value === currentValue) {
+                    option.style.display = '';
+                } else if (selectedIds.includes(option.value)) {
+                    option.style.display = 'none';
+                } else {
+                    option.style.display = '';
+                }
+            });
+        });
+    }
+    
+    // Function to validate for duplicates
+    function validateNoDuplicates() {
+        const selectedIds = getSelectedItemIds();
+        const duplicates = selectedIds.filter((id, index) => selectedIds.indexOf(id) !== index);
+        return duplicates.length === 0;
+    }
+    
     document.getElementById('add-item').addEventListener('click', function() {
         const container = document.getElementById('items-container');
         const template = container.firstElementChild.cloneNode(true);
@@ -429,13 +465,21 @@
         template.querySelector('.item-number').textContent = `Item ${container.children.length + 1}`;
         
         // Update all input names
+        const itemSelect = template.querySelector('select[name*="[inventory_item_id]"]');
         template.querySelectorAll('input, select').forEach(el => {
             if (el.name) {
                 el.name = el.name.replace(/\[\d+\]/, `[${itemIndex}]`);
-                el.value = '';
+                if (el !== itemSelect) {
+                    el.value = '';
+                }
                 el.classList.remove('is-invalid');
             }
         });
+        
+        // Reset the select value
+        if (itemSelect) {
+            itemSelect.value = '';
+        }
         
         // Remove error messages
         template.querySelectorAll('.invalid-feedback-custom').forEach(el => {
@@ -444,7 +488,27 @@
         
         container.appendChild(template);
         itemIndex++;
+        
+        // Update dropdown options after adding new row
+        updateDropdownOptions();
+        
+        // Add change event listener to the new select
+        if (itemSelect) {
+            itemSelect.addEventListener('change', function() {
+                updateDropdownOptions();
+            });
+        }
     });
+    
+    // Add change event listeners to existing selects
+    document.querySelectorAll('select[name*="[inventory_item_id]"]').forEach(select => {
+        select.addEventListener('change', function() {
+            updateDropdownOptions();
+        });
+    });
+    
+    // Initial update of dropdown options
+    updateDropdownOptions();
     
     document.addEventListener('click', function(e) {
         if (e.target.closest('.btn-remove-item')) {
@@ -456,6 +520,9 @@
                 container.querySelectorAll('.item-row-modern').forEach((row, index) => {
                     row.querySelector('.item-number').textContent = `Item ${index + 1}`;
                 });
+                
+                // Update dropdown options after removal
+                updateDropdownOptions();
             } else {
                 alert('You must have at least one item in the purchase request.');
             }
@@ -481,6 +548,13 @@
         if (!hasValidItem) {
             e.preventDefault();
             alert('Please add at least one item to the purchase request.');
+            return false;
+        }
+        
+        // Check for duplicates
+        if (!validateNoDuplicates()) {
+            e.preventDefault();
+            alert('Each item can only be selected once. Please remove duplicate items.');
             return false;
         }
         

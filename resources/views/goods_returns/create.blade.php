@@ -205,7 +205,7 @@
                             <tr>
                                 <td><span class="font-monospace">{{ $gr->gr_number }}</span></td>
                                 <td><span class="font-monospace">{{ $gr->purchaseOrder->po_number }}</span></td>
-                                <td>{{ $gr->purchaseOrder->supplier->name }}</td>
+                                <td>{{ $gr->purchaseOrder->supplier->name ?? 'N/A' }}</td>
                                 <td>{{ $gr->gr_date ? $gr->gr_date->format('M d, Y') : 'N/A' }}</td>
                                 <td><span class="badge badge-info">{{ $gr->items->count() }} items</span></td>
                                 <td>

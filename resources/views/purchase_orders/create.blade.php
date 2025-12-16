@@ -131,13 +131,73 @@
     </div>
 </div>
 @else
-<div class="alert alert-info-modern">
-    <div class="alert-icon">
-        <i class="bi bi-info-circle"></i>
-    </div>
-    <div class="alert-content">
-        <strong>No Quotation Selected</strong>
-        <p class="mb-0">Please select a quotation to create a purchase order from.</p>
+<div class="form-card">
+    <div class="form-card-body">
+        <div class="mb-4">
+            <h5 class="form-section-title">
+                <i class="bi bi-file-earmark-spreadsheet"></i> Select a Quotation
+            </h5>
+            <p class="text-muted">Choose a pending or accepted quotation to create a purchase order from.</p>
+        </div>
+        
+        @if($availableQuotations->count() > 0)
+        <div class="table-responsive">
+            <table class="table table-modern">
+                <thead>
+                    <tr>
+                        <th>Quotation Number</th>
+                        <th>Purchase Request</th>
+                        <th>Project Code</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($availableQuotations as $q)
+                        <tr>
+                            <td>
+                                <span class="font-monospace fw-semibold">{{ $q->quotation_number }}</span>
+                            </td>
+                            <td>
+                                <span class="font-monospace">{{ $q->purchaseRequest->pr_number ?? 'N/A' }}</span>
+                            </td>
+                            <td>
+                                @if($q->project_code)
+                                    <span class="text-primary">{{ $q->project_code }}</span>
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
+                            <td>
+                                <span class="text-muted">{{ $q->quotation_date->format('M d, Y') }}</span>
+                            </td>
+                            <td>
+                                <span class="status-text status-text-{{ $q->status === 'accepted' ? 'success' : 'primary' }}">
+                                    {{ ucfirst($q->status) }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ route('purchase-orders.create', ['quotation_id' => $q->id]) }}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-cart-check"></i> Select
+                                </a>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @else
+        <div class="alert alert-info-modern">
+            <div class="alert-icon">
+                <i class="bi bi-info-circle"></i>
+            </div>
+            <div class="alert-content">
+                <strong>No Available Quotations</strong>
+                <p class="mb-0">There are no pending or accepted quotations available to create a purchase order from. All quotations may have already been converted to purchase orders.</p>
+            </div>
+        </div>
+        @endif
     </div>
 </div>
 @endif
@@ -414,6 +474,22 @@
         border-radius: 6px;
         font-size: 0.75rem;
         font-weight: 600;
+    }
+    
+    .status-text {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0;
+        border-radius: 0;
+        display: inline-block;
+    }
+    
+    .status-text-primary {
+        color: #2563eb;
+    }
+    
+    .status-text-success {
+        color: #10b981;
     }
 </style>
 @endpush

@@ -151,32 +151,55 @@
         <div class="column">
             <div class="info-section">
                 <h3 style="margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 5px;">SUPPLIER INFORMATION</h3>
+                @php
+                    // Get all unique suppliers from items
+                    $suppliers = $purchaseOrder->items->map(function($item) {
+                        return $item->supplier;
+                    })->filter()->unique('id');
+                    
+                    // If no suppliers in items, try the main supplier
+                    if ($suppliers->isEmpty() && $purchaseOrder->supplier) {
+                        $suppliers = collect([$purchaseOrder->supplier]);
+                    }
+                @endphp
+                
+                @if($suppliers->count() > 0)
+                    @foreach($suppliers as $supplier)
+                        <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">
+                            <div class="info-row">
+                                <span class="info-label">Name:</span>
+                                <span class="info-value"><strong>{{ $supplier->name }}</strong></span>
+                            </div>
+                            @if($supplier->contact_person)
+                            <div class="info-row">
+                                <span class="info-label">Contact Person:</span>
+                                <span class="info-value">{{ $supplier->contact_person }}</span>
+                            </div>
+                            @endif
+                            @if($supplier->address)
+                            <div class="info-row">
+                                <span class="info-label">Address:</span>
+                                <span class="info-value">{{ $supplier->address }}</span>
+                            </div>
+                            @endif
+                            @if($supplier->phone)
+                            <div class="info-row">
+                                <span class="info-label">Phone:</span>
+                                <span class="info-value">{{ $supplier->phone }}</span>
+                            </div>
+                            @endif
+                            @if($supplier->email)
+                            <div class="info-row">
+                                <span class="info-label">Email:</span>
+                                <span class="info-value">{{ $supplier->email }}</span>
+                            </div>
+                            @endif
+                        </div>
+                    @endforeach
+                @else
                 <div class="info-row">
-                    <span class="info-label">Name:</span>
-                    <span class="info-value">{{ $purchaseOrder->supplier->name }}</span>
-                </div>
-                @if($purchaseOrder->supplier->contact_person)
-                <div class="info-row">
-                    <span class="info-label">Contact Person:</span>
-                    <span class="info-value">{{ $purchaseOrder->supplier->contact_person }}</span>
-                </div>
-                @endif
-                @if($purchaseOrder->supplier->address)
-                <div class="info-row">
-                    <span class="info-label">Address:</span>
-                    <span class="info-value">{{ $purchaseOrder->supplier->address }}</span>
-                </div>
-                @endif
-                @if($purchaseOrder->supplier->phone)
-                <div class="info-row">
-                    <span class="info-label">Phone:</span>
-                    <span class="info-value">{{ $purchaseOrder->supplier->phone }}</span>
-                </div>
-                @endif
-                @if($purchaseOrder->supplier->email)
-                <div class="info-row">
-                    <span class="info-label">Email:</span>
-                    <span class="info-value">{{ $purchaseOrder->supplier->email }}</span>
+                    <span class="info-label">Note:</span>
+                    <span class="info-value">No supplier information available</span>
                 </div>
                 @endif
             </div>
@@ -231,8 +254,9 @@
         <thead>
             <tr>
                 <th style="width: 5%;">#</th>
-                <th style="width: 40%;">Item Description</th>
-                <th style="width: 10%;">Quantity</th>
+                <th style="width: 50%;">Item Description</th>
+                <th style="width: 20%;">Supplier</th>
+                <th style="width: 25%;">Quantity</th>
             </tr>
         </thead>
         <tbody>
@@ -240,15 +264,27 @@
                 <tr>
                     <td style="text-align: center;">{{ $index + 1 }}</td>
                     <td>
-                        <strong>{{ $item->inventoryItem->name }}</strong>
-                        @if($item->inventoryItem->item_code)
+                        <strong>{{ $item->inventoryItem->name ?? 'N/A' }}</strong>
+                        @if($item->inventoryItem && $item->inventoryItem->item_code)
                         <br><small style="color: #666;">Code: {{ $item->inventoryItem->item_code }}</small>
                         @endif
                         @if($item->specifications)
                         <br><small style="color: #666;">{{ $item->specifications }}</small>
                         @endif
                     </td>
-                    <td style="text-align: right;">{{ number_format($item->quantity, 2) }}</td>
+                    <td>
+                        @if($item->supplier)
+                            {{ $item->supplier->name }}
+                        @else
+                            <span style="color: #999;">N/A</span>
+                        @endif
+                    </td>
+                    <td style="text-align: right;">
+                        {{ number_format($item->quantity, 2) }}
+                        @if($item->inventoryItem && $item->inventoryItem->unit_of_measure)
+                        <br><small style="color: #666;">{{ $item->inventoryItem->unit_of_measure }}</small>
+                        @endif
+                    </td>
                 </tr>
             @endforeach
         </tbody>

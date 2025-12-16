@@ -181,18 +181,37 @@
             </div>
         </div>
         
-        @if($quotation->valid_until->isPast())
+        @php
+            // Treat valid_until as end of day (quotation is valid through the entire day)
+            $validUntilEndOfDay = $quotation->valid_until->copy()->endOfDay();
+            $isExpired = $validUntilEndOfDay->isPast();
+            
+            // Calculate days remaining from today to valid_until date
+            $today = now();
+            $todayDate = $today->copy()->startOfDay();
+            $validUntilDate = $quotation->valid_until->copy()->startOfDay();
+            // Calculate from today to valid_until (positive if future, negative if past)
+            $daysRemaining = (int) $todayDate->diffInDays($validUntilDate, false);
+        @endphp
+        
+        @if($isExpired)
         <div class="alert alert-warning">
             <i class="bi bi-exclamation-triangle"></i>
             <strong>Expired</strong><br>
-            This quotation expired on {{ $quotation->valid_until->format('M d, Y') }}
+            Today is {{ $today->format('M d, Y') }}. This quotation expired on {{ $quotation->valid_until->format('M d, Y') }}
+            @php
+                $daysExpired = abs($daysRemaining);
+            @endphp
+            @if($daysExpired > 0)
+            <br><small>({{ $daysExpired }} {{ $daysExpired == 1 ? 'day' : 'days' }} ago)</small>
+            @endif
         </div>
-        @elseif($quotation->valid_until->diffInDays(now()) <= 7)
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i>
-            <strong>Expiring Soon</strong><br>
-            This quotation expires in {{ $quotation->valid_until->diffInDays(now()) }} days
-        </div>
+        @elseif($daysRemaining <= 7)
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                <strong>Expiring Soon</strong><br>
+                Today is <strong>{{ $today->format('M d, Y') }}</strong>. This quotation expires in <strong>{{ $daysRemaining }} {{ $daysRemaining == 1 ? 'day' : 'days' }}</strong> ({{ $quotation->valid_until->format('M d, Y') }})
+            </div>
         @endif
     </div>
 </div>

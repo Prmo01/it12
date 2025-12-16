@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'pgsql'),
+    'default' => env('DB_CONNECTION', 'sqlite'),
 
     /*
     |--------------------------------------------------------------------------
@@ -75,7 +75,6 @@ return [
 
     'pgsql' => [
     'driver' => 'pgsql',
-    'url' => env('DB_URL'),
     'host' => env('DB_HOST'),
     'port' => env('DB_PORT', '5432'),
     'database' => env('DB_DATABASE'),
@@ -85,9 +84,19 @@ return [
     'prefix' => '',
     'prefix_indexes' => true,
     'sslmode' => env('DB_SSLMODE', 'require'),
+
+    // Force endpoint for Neon SNI
     'options' => extension_loaded('pdo_pgsql') ? [
         PDO::PGSQL_ATTR_DISABLE_PREPARES => true,
     ] : [],
+    'dsn' => sprintf(
+        'pgsql:host=%s;port=%s;dbname=%s;sslmode=%s;options=%s',
+        env('DB_HOST'),
+        env('DB_PORT', '5432'),
+        env('DB_DATABASE'),
+        env('DB_SSLMODE', 'require'),
+        env('DB_OPTIONS')
+    ),
 ],
 
 

@@ -84,13 +84,13 @@
                         <label class="form-label-custom">
                             <i class="bi bi-telephone"></i> Phone Number
                         </label>
-                        <input type="text" name="phone" class="form-control-custom @error('phone') is-invalid @enderror" value="{{ old('phone', $supplier->phone) }}" placeholder="Enter phone number">
+                        <input type="text" name="phone" id="phone" class="form-control-custom @error('phone') is-invalid @enderror" value="{{ old('phone', $supplier->phone) }}" placeholder="Enter 11-digit phone number" maxlength="11" pattern="[0-9]{11}">
                         @error('phone')
                             <div class="invalid-feedback-custom">
                                 <i class="bi bi-exclamation-circle"></i> {{ $message }}
                             </div>
                         @enderror
-                        <small class="form-help-text">Contact phone number</small>
+                        <small class="form-help-text">Enter exactly 11 digits (numbers only)</small>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label-custom">
@@ -291,10 +291,51 @@
 
 @push('scripts')
 <script>
+    // Restrict phone input to numbers only and limit to 11 digits
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            // Remove any non-numeric characters
+            this.value = this.value.replace(/\D/g, '');
+            
+            // Limit to 11 digits
+            if (this.value.length > 11) {
+                this.value = this.value.slice(0, 11);
+            }
+        });
+        
+        // Prevent non-numeric characters on keypress
+        phoneInput.addEventListener('keypress', function(e) {
+            const char = String.fromCharCode(e.which);
+            if (!/[0-9]/.test(char)) {
+                e.preventDefault();
+            }
+        });
+        
+        // Validate on paste
+        phoneInput.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const paste = (e.clipboardData || window.clipboardData).getData('text');
+            const numbersOnly = paste.replace(/\D/g, '').slice(0, 11);
+            this.value = numbersOnly;
+        });
+    }
+    
     document.getElementById('supplierForm')?.addEventListener('submit', function(e) {
         const form = this;
         const submitBtn = form.querySelector('.btn-submit');
         const originalText = submitBtn.innerHTML;
+        
+        // Validate phone number if provided
+        const phoneInput = form.querySelector('input[name="phone"]');
+        if (phoneInput && phoneInput.value) {
+            if (phoneInput.value.length !== 11) {
+                e.preventDefault();
+                alert('Phone number must be exactly 11 digits.');
+                phoneInput.focus();
+                return false;
+            }
+        }
         
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Updating...';

@@ -172,7 +172,7 @@
     }
     
     .table-modern tbody tr:hover {
-        background-color: #dbeafe !important;
+        background-color: #f9fafb !important;
         cursor: pointer;
     }
     

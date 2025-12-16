@@ -64,7 +64,17 @@ class PurchaseOrderController extends Controller
         if ($request->has('quotation_id')) {
             $quotation = Quotation::with(['items.inventoryItem', 'items.supplier', 'purchaseRequest'])->findOrFail($request->quotation_id);
         }
-        return view('purchase_orders.create', compact('quotation'));
+        
+        // Get pending and accepted quotations that don't have a PO yet
+        $availableQuotations = Quotation::with(['purchaseRequest', 'items.inventoryItem', 'items.supplier'])
+            ->whereIn('status', ['pending', 'accepted'])
+            ->whereDoesntHave('purchaseOrders', function ($q) {
+                $q->where('status', '!=', 'cancelled');
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return view('purchase_orders.create', compact('quotation', 'availableQuotations'));
     }
 
     public function store(Request $request)

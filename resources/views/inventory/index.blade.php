@@ -20,7 +20,6 @@
                         <th>#</th>
                         <th>Code</th>
                         <th>Name</th>
-                        <th>Category</th>
                         <th>Type</th>
                         <th>Current Stock</th>
                         <th>Status</th>
@@ -36,13 +35,6 @@
                                 <div class="fw-semibold">{{ $item->name }}</div>
                                 @if($item->description)
                                     <small class="text-muted">{{ Str::limit($item->description, 40) }}</small>
-                                @endif
-                            </td>
-                            <td>
-                                @if($item->category)
-                                    {{ $item->category }}
-                                @else
-                                    <span class="text-muted">N/A</span>
                                 @endif
                             </td>
                             <td>
@@ -77,7 +69,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center py-5">
+                            <td colspan="7" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="bi bi-boxes"></i>
                                     <p class="mt-3 mb-0">No items found</p>
@@ -157,22 +149,18 @@
     }
     
     .type-raw-material {
-        background: #dbeafe;
         color: #1e40af;
     }
     
     .type-finished-good {
-        background: #d1fae5;
         color: #065f46;
     }
     
     .type-consumable {
-        background: #fef3c7;
         color: #92400e;
     }
     
     .type-tool {
-        background: #e9d5ff;
         color: #6b21a8;
     }
     

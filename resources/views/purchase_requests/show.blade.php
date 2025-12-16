@@ -174,7 +174,7 @@
                             @foreach($purchaseRequest->quotations as $quotation)
                                 <tr>
                                     <td><span class="text-muted font-monospace">{{ $quotation->quotation_number }}</span></td>
-                                    <td>{{ $quotation->supplier->name }}</td>
+                                    <td>{{ $quotation->supplier->name ?? 'N/A' }}</td>
                                     <td><strong>₱{{ number_format($quotation->total_amount, 2) }}</strong></td>
                                     <td>
                                         <span class="status-text status-text-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'primary' : 'secondary') }}">

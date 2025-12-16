@@ -320,22 +320,18 @@
     }
     
     .type-raw-material {
-        background: #dbeafe;
         color: #1e40af;
     }
     
     .type-finished-good {
-        background: #d1fae5;
         color: #065f46;
     }
     
     .type-consumable {
-        background: #fef3c7;
         color: #92400e;
     }
     
     .type-tool {
-        background: #e9d5ff;
         color: #6b21a8;
     }
     

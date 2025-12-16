@@ -56,7 +56,7 @@
         <div class="quotation-card-compare {{ $quotation->status === 'accepted' ? 'accepted' : '' }}">
             <div class="quotation-card-header">
                 <div>
-                    <h5 class="mb-1">{{ $quotation->supplier->name }}</h5>
+                    <h5 class="mb-1">{{ $quotation->supplier->name ?? 'N/A' }}</h5>
                     <small class="text-muted font-monospace">{{ $quotation->quotation_number }}</small>
                 </div>
                 <div class="text-end">
@@ -116,7 +116,7 @@
                         <th rowspan="2" class="qty-col">Qty</th>
                         @foreach($quotations as $quotation)
                         <th colspan="2" class="supplier-col">
-                            <div class="supplier-name">{{ $quotation->supplier->name }}</div>
+                            <div class="supplier-name">{{ $quotation->supplier->name ?? 'N/A' }}</div>
                             <small class="text-muted">{{ $quotation->quotation_number }}</small>
                         </th>
                         @endforeach
@@ -142,7 +142,7 @@
                                 $quantity = $quoteItem->quantity;
                                 $prices[$quotation->id] = [
                                     'quantity' => $quantity,
-                                    'supplier' => $quotation->supplier->name
+                                    'supplier' => $quotation->supplier->name ?? 'N/A'
                                 ];
                             } else {
                                 $prices[$quotation->id] = null;
@@ -297,7 +297,6 @@
     
     .supplier-col {
         text-align: center;
-        background: #f3f4f6 !important;
     }
     
     .supplier-name {
@@ -334,8 +333,8 @@
     }
     
     .price-cell.best-price {
-        background: #d1fae5;
         font-weight: 600;
+        color: #10b981;
     }
     
     .badge-best {
@@ -367,7 +366,8 @@
     }
     
     .total-cell.best-total {
-        background: #d1fae5;
+        color: #10b981;
+        font-weight: 600;
     }
     
     .badge-best-total {
