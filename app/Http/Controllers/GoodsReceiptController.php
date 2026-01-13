@@ -19,17 +19,38 @@ class GoodsReceiptController extends Controller
 
     public function index(Request $request)
     {
-        $query = GoodsReceipt::with(['purchaseOrder.items.supplier', 'receivedBy', 'approvedBy']);
+        $query = GoodsReceipt::with(['purchaseOrder.items.supplier', 'purchaseOrder.purchaseRequest.project', 'receivedBy', 'approvedBy', 'warehouseApprovedBy', 'inventoryApprovedBy']);
 
-        if ($request->has('status')) {
+        if ($request->has('status') && $request->status != '') {
             $query->where('status', $request->status);
         }
 
-        if ($request->has('purchase_order_id')) {
+        if ($request->has('purchase_order_id') && $request->purchase_order_id != '') {
             $query->where('purchase_order_id', $request->purchase_order_id);
         }
 
-        $goodsReceipts = $query->latest()->paginate(15);
+        if ($request->has('supplier_id') && $request->supplier_id != '') {
+            $query->whereHas('purchaseOrder.items', function($q) use ($request) {
+                $q->where('supplier_id', $request->supplier_id);
+            });
+        }
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('gr_number', 'like', "%{$search}%")
+                  ->orWhere('project_code', 'like', "%{$search}%")
+                  ->orWhere('delivery_note_number', 'like', "%{$search}%")
+                  ->orWhereHas('purchaseOrder', function($q) use ($search) {
+                      $q->where('po_number', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('purchaseOrder.items.supplier', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $goodsReceipts = $query->latest()->paginate(15)->withQueryString();
 
         return view('goods_receipts.index', compact('goodsReceipts'));
     }
@@ -66,7 +87,7 @@ class GoodsReceiptController extends Controller
         $validated = $request->validate([
             'purchase_order_id' => 'required|exists:purchase_orders,id',
             'gr_date' => 'required|date',
-            'delivery_note_number' => 'nullable|string',
+            'delivery_note_number' => 'required|string|min:3',
             'remarks' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.purchase_order_item_id' => 'required|exists:purchase_order_items,id',
@@ -85,7 +106,7 @@ class GoodsReceiptController extends Controller
         }
 
         $validated['gr_number'] = 'GR-' . strtoupper(Str::random(8));
-        $validated['status'] = 'draft';
+        $validated['status'] = 'pending';
         $validated['received_by'] = auth()->id();
 
         // Get project_code from purchase_order
@@ -110,30 +131,51 @@ class GoodsReceiptController extends Controller
             $gr->items()->create($item);
         }
 
-        return redirect()->route('goods-receipts.show', $gr)->with('success', 'Goods receipt created successfully.');
+        return redirect()->route('goods-receipts.show', $gr)->with('success', 'Goods receipt submitted for approval. Waiting for inventory manager approval.');
     }
 
     public function show(GoodsReceipt $goodsReceipt)
     {
-        $goodsReceipt->load(['purchaseOrder', 'items.purchaseOrderItem.supplier', 'items.inventoryItem', 'receivedBy', 'approvedBy']);
+        $goodsReceipt->load(['purchaseOrder', 'items.purchaseOrderItem.supplier', 'items.inventoryItem', 'receivedBy', 'approvedBy', 'warehouseApprovedBy', 'inventoryApprovedBy']);
         return view('goods_receipts.show', compact('goodsReceipt'));
     }
 
     public function approve(Request $request, GoodsReceipt $goodsReceipt)
     {
+        $user = auth()->user();
+        
+        // Only Inventory Manager can approve and update stock
+        if (!$user->hasRole('inventory_manager') && !$user->isAdmin()) {
+            return redirect()->back()->with('error', 'Only inventory managers can approve goods receipts and update stock.');
+        }
+
+        if ($goodsReceipt->status !== 'pending') {
+            return redirect()->back()->with('error', 'Only pending goods receipts can be approved.');
+        }
+
+        $validated = $request->validate([
+            'inventory_feedback' => 'nullable|string|max:1000',
+        ]);
+
         $goodsReceipt->update([
             'status' => 'approved',
-            'approved_by' => auth()->id(),
+            'approved_by' => $user->id,
             'approved_at' => now(),
+            'inventory_approved_by' => $user->id,
+            'inventory_approved_at' => now(),
+            'inventory_feedback' => $validated['inventory_feedback'] ?? null,
         ]);
 
         // Reload with relationships needed for stock processing
         $goodsReceipt->load(['items.purchaseOrderItem']);
 
+        // Update stock when inventory manager approves
         $this->stockService->processGoodsReceipt($goodsReceipt);
 
-        return redirect()->route('goods-receipts.show', $goodsReceipt)->with('success', 'Goods receipt approved and stock updated.');
+        return redirect()->route('goods-receipts.show', $goodsReceipt)
+            ->with('success', 'Goods receipt approved and stock updated.');
     }
+
 
     public function cancel(Request $request, GoodsReceipt $goodsReceipt)
     {

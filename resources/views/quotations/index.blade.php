@@ -8,11 +8,59 @@
         <h1 class="h2 mb-1"><i class="bi bi-file-earmark-spreadsheet"></i> Quotations</h1>
         <p class="text-muted mb-0">Manage supplier quotations and pricing</p>
     </div>
+    @if(auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing'))
     <a href="{{ route('quotations.create') }}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> New Quotation</a>
+    @endif
 </div>
 
 <div class="card quotation-card">
     <div class="card-body">
+        <form method="GET" class="mb-4 filter-form">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label-custom-small">
+                        <i class="bi bi-search"></i> Search
+                    </label>
+                    <input type="text" name="search" class="form-control-custom" placeholder="Quotation Number, PR Number..." value="{{ request('search') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-custom-small">
+                        <i class="bi bi-funnel"></i> Status
+                    </label>
+                    <select name="status" class="form-control-custom">
+                        <option value="">All Statuses</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="accepted" {{ request('status') == 'accepted' ? 'selected' : '' }}>Accepted</option>
+                        <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                        <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-custom-small">
+                        <i class="bi bi-file-earmark-text"></i> Purchase Request
+                    </label>
+                    <select name="purchase_request_id" class="form-control-custom">
+                        <option value="">All Purchase Requests</option>
+                        @foreach(\App\Models\PurchaseRequest::orderBy('pr_number', 'desc')->get() as $pr)
+                            <option value="{{ $pr->id }}" {{ request('purchase_request_id') == $pr->id ? 'selected' : '' }}>
+                                {{ $pr->pr_number }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="bi bi-search"></i> Filter
+                    </button>
+                    @if(request()->hasAny(['search', 'status', 'purchase_request_id']))
+                    <a href="{{ route('quotations.index') }}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                    @endif
+                </div>
+            </div>
+        </form>
+        
         <div class="table-responsive">
             <table class="table table-modern">
                 <thead>
@@ -20,7 +68,6 @@
                         <th>Quotation Number</th>
                         <th>Project Code</th>
                         <th>Purchase Request</th>
-                        <th>Suppliers</th>
                         <th>Date</th>
                         <th>Total Quantity</th>
                         <th>Status</th>
@@ -40,35 +87,6 @@
                             </td>
                             <td>
                                 <div class="fw-semibold">{{ $quotation->purchaseRequest->pr_number ?? 'N/A' }}</div>
-                                @php
-                                    $prQuotationCount = \App\Models\Quotation::where('purchase_request_id', $quotation->purchase_request_id)
-                                        ->whereIn('status', ['pending', 'accepted'])
-                                        ->count();
-                                @endphp
-                                @if($prQuotationCount >= 2)
-                                <small>
-                                    <a href="{{ route('quotations.compare', ['purchase_request_id' => $quotation->purchase_request_id]) }}" class="text-success">
-                                        <i class="bi bi-bar-chart"></i> Compare ({{ $prQuotationCount }})
-                                    </a>
-                                </small>
-                                @endif
-                            </td>
-                            <td>
-                                @php
-                                    $suppliers = $quotation->items->pluck('supplier')->filter()->unique('id');
-                                @endphp
-                                @if($suppliers->count() > 0)
-                                    <div class="d-flex flex-column gap-1">
-                                        @foreach($suppliers->take(2) as $supplier)
-                                            <span class="supplier-text">{{ $supplier->name }}</span>
-                                        @endforeach
-                                        @if($suppliers->count() > 2)
-                                            <span class="text-muted small">+{{ $suppliers->count() - 2 }} more</span>
-                                        @endif
-                                    </div>
-                                @else
-                                    <span class="text-muted">N/A</span>
-                                @endif
                             </td>
                             <td><span class="text-muted">{{ $quotation->quotation_date->format('M d, Y') }}</span></td>
                             <td>
@@ -82,10 +100,21 @@
                             </td>
                             <td>
                                 <div class="action-buttons">
-                                    <a href="{{ route('quotations.show', $quotation) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                    @php
+                                        $suppliers = $quotation->items->pluck('supplier')->filter()->unique('id');
+                                        $supplierNames = $suppliers->pluck('name')->implode(', ');
+                                        $tooltip = 'View';
+                                        if ($quotation->project_code) {
+                                            $tooltip .= ' - Project Code: ' . $quotation->project_code;
+                                        }
+                                        if ($supplierNames) {
+                                            $tooltip .= ' - Suppliers: ' . $supplierNames;
+                                        }
+                                    @endphp
+                                    <a href="{{ route('quotations.show', $quotation) }}" class="btn btn-sm btn-action btn-view" title="{{ $tooltip }}">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    @if($quotation->status !== 'rejected' && !$quotation->purchaseOrders()->where('status', '!=', 'cancelled')->exists())
+                                    @if(($quotation->status !== 'rejected' && !$quotation->purchaseOrders()->where('status', '!=', 'cancelled')->exists()) && (auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing')))
                                     <form action="{{ route('quotations.cancel', $quotation) }}" method="POST" class="d-inline cancel-form" data-id="{{ $quotation->id }}">
                                         @csrf
                                         <input type="hidden" name="cancellation_reason" class="cancel-reason-input">
@@ -99,7 +128,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center py-5">
+                            <td colspan="7" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="bi bi-file-earmark-x"></i>
                                     <p class="mt-3 mb-0">No quotations found</p>
@@ -126,11 +155,50 @@
         border: 1px solid #e5e7eb;
     }
     
+    .filter-form {
+        padding: 1.5rem;
+        background: #f9fafb;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .form-label-custom-small {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .form-label-custom-small i {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    
+    .form-control-custom {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 0.9375rem;
+        color: #111827;
+        background: #ffffff;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control-custom:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        background: #fafbff;
+    }
+    
     .action-buttons {
         display: flex;
         gap: 0.5rem;
     }
-    
     
     .table-modern {
         margin-bottom: 0;

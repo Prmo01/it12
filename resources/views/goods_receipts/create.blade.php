@@ -37,15 +37,15 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label-custom">
-                            <i class="bi bi-file-earmark-text"></i> Delivery Note Number
+                            <i class="bi bi-file-earmark-text"></i> Delivery Note Number <span class="text-danger">*</span>
                         </label>
-                        <input type="text" name="delivery_note_number" class="form-control-custom @error('delivery_note_number') is-invalid @enderror" value="{{ old('delivery_note_number') }}" placeholder="Enter delivery note number">
+                        <input type="text" name="delivery_note_number" class="form-control-custom @error('delivery_note_number') is-invalid @enderror" value="{{ old('delivery_note_number') }}" placeholder="Enter delivery note number" required>
                         @error('delivery_note_number')
                             <div class="invalid-feedback-custom">
                                 <i class="bi bi-exclamation-circle"></i> {{ $message }}
                             </div>
                         @enderror
-                        <small class="form-help-text">Optional delivery note reference</small>
+                        <small class="form-help-text">Delivery note reference number</small>
                     </div>
                     <div class="col-md-12">
                         <label class="form-label-custom">
@@ -142,7 +142,7 @@
             
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary btn-submit">
-                    <i class="bi bi-save"></i> Create Goods Receipt
+                    <i class="bi bi-check-circle"></i> Submit for Approval
                 </button>
                 <a href="{{ route('goods-receipts.index') }}" class="btn btn-secondary btn-cancel">
                     <i class="bi bi-x-circle"></i> Cancel

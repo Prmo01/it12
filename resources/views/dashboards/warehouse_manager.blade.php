@@ -15,10 +15,10 @@
 </div>
 
 <!-- Stats Cards -->
-<div class="row mb-2">
-    <div class="col-md-3 mb-3">
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
         <a href="{{ route('goods-receipts.index') }}" class="stat-card-link">
-            <div class="stat-card stat-card-warning">
+            <div class="stat-card stat-card-warning h-100">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -35,9 +35,9 @@
         </a>
     </div>
     
-    <div class="col-md-3 mb-3">
+    <div class="col-md-3">
         <a href="{{ route('goods-returns.index') }}" class="stat-card-link">
-            <div class="stat-card stat-card-primary">
+            <div class="stat-card stat-card-primary h-100">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -54,9 +54,9 @@
         </a>
     </div>
     
-    <div class="col-md-3 mb-3">
+    <div class="col-md-3">
         <a href="{{ route('goods-receipts.index', ['status' => 'approved']) }}" class="stat-card-link">
-            <div class="stat-card stat-card-success">
+            <div class="stat-card stat-card-success h-100">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -73,9 +73,9 @@
         </a>
     </div>
     
-    <div class="col-md-3 mb-3">
+    <div class="col-md-3">
         <a href="{{ route('goods-receipts.index', ['status' => 'rejected']) }}" class="stat-card-link">
-            <div class="stat-card stat-card-danger">
+            <div class="stat-card stat-card-danger h-100">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -93,10 +93,32 @@
     </div>
 </div>
 
+<!-- Additional Stats Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-12">
+        <a href="{{ route('purchase-orders.index') }}" class="stat-card-link">
+            <div class="stat-card stat-card-info h-100">
+                <div class="stat-card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="stat-content">
+                            <p class="stat-label">Approved POs Ready for Receipt</p>
+                            <h2 class="stat-value">{{ $approvedPOsReady ?? 0 }}</h2>
+                            <small class="stat-change text-muted">Click to view and create goods receipts</small>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="bi bi-cart-check"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
 <!-- Charts Row -->
-<div class="row mb-2">
-    <div class="col-md-6 mb-3">
-        <div class="chart-card">
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="chart-card h-100">
             <div class="chart-card-header">
                 <h5 class="chart-title">Goods Receipts by Status</h5>
                 <i class="bi bi-pie-chart chart-icon"></i>
@@ -107,8 +129,8 @@
         </div>
     </div>
     
-    <div class="col-md-6 mb-3">
-        <div class="chart-card">
+    <div class="col-md-6">
+        <div class="chart-card h-100">
             <div class="chart-card-header">
                 <h5 class="chart-title">Monthly Approvals Trend</h5>
                 <i class="bi bi-graph-up-arrow chart-icon"></i>
@@ -142,9 +164,9 @@
 </div>
 
 <!-- Inventory Movements Chart -->
-<div class="row mb-2">
-    <div class="col-md-12 mb-3">
-        <div class="chart-card">
+<div class="row g-3 mb-4">
+    <div class="col-md-12">
+        <div class="chart-card h-100">
             <div class="chart-card-header">
                 <h5 class="chart-title">Inventory Movements</h5>
                 <i class="bi bi-arrow-left-right chart-icon"></i>
@@ -178,9 +200,9 @@
 </div>
 
 <!-- Recent Activities -->
-<div class="row">
-    <div class="col-md-6 mb-3">
-        <div class="activity-card">
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="activity-card h-100">
             <div class="activity-card-header">
                 <h5 class="activity-title">Recent Goods Receipts</h5>
                 <a href="{{ route('goods-receipts.index') }}" class="activity-link">View all <i class="bi bi-arrow-right"></i></a>
@@ -189,8 +211,8 @@
                 @forelse($recentReceipts as $receipt)
                     <a href="{{ route('goods-receipts.show', $receipt) }}" class="activity-item">
                         <div class="activity-item-content">
-                            <div class="activity-item-header">
-                                <h6 class="activity-item-title">{{ $receipt->gr_number }}</h6>
+                            <div class="activity-item-header d-flex justify-content-between align-items-center">
+                                <h6 class="activity-item-title mb-0">{{ $receipt->gr_number }}</h6>
                                 <span class="status-text status-text-{{ $receipt->status === 'approved' ? 'success' : ($receipt->status === 'pending' ? 'warning' : 'secondary') }}">{{ ucfirst($receipt->status) }}</span>
                             </div>
                             <p class="activity-item-meta">
@@ -210,8 +232,8 @@
         </div>
     </div>
     
-    <div class="col-md-6 mb-3">
-        <div class="activity-card">
+    <div class="col-md-6">
+        <div class="activity-card h-100">
             <div class="activity-card-header">
                 <h5 class="activity-title">Recent Goods Returns</h5>
                 <a href="{{ route('goods-returns.index') }}" class="activity-link">View all <i class="bi bi-arrow-right"></i></a>
@@ -220,8 +242,8 @@
                 @forelse($recentReturns as $return)
                     <a href="{{ route('goods-returns.show', $return) }}" class="activity-item">
                         <div class="activity-item-content">
-                            <div class="activity-item-header">
-                                <h6 class="activity-item-title">{{ $return->return_number }}</h6>
+                            <div class="activity-item-header d-flex justify-content-between align-items-center">
+                                <h6 class="activity-item-title mb-0">{{ $return->return_number }}</h6>
                                 <span class="status-text status-text-{{ $return->status === 'approved' ? 'success' : ($return->status === 'pending' ? 'warning' : 'secondary') }}">{{ ucfirst($return->status) }}</span>
                             </div>
                             <p class="activity-item-meta">

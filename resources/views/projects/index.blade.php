@@ -67,17 +67,11 @@
                         <tr>
                             <td><span class="text-muted font-monospace">{{ $project->project_code }}</span></td>
                             <td>
-                                <div class="fw-semibold text-truncate" style="max-width: 300px;" title="{{ $project->name }}">{{ $project->name }}</div>
-                                @if($project->description)
-                                    <small class="text-muted d-block text-truncate" style="max-width: 300px;" title="{{ $project->description }}">{{ Str::limit($project->description, 50) }}</small>
-                                @endif
+                                <div class="fw-semibold">{{ $project->name }}</div>
                             </td>
                             <td>
                                 @if($project->projectManager)
                                     <div class="fw-semibold">{{ $project->projectManager->name }}</div>
-                                    @if($project->projectManager->role)
-                                        <small class="text-muted">{{ $project->projectManager->role->name }}</small>
-                                    @endif
                                 @else
                                     <span class="text-muted">N/A</span>
                                 @endif

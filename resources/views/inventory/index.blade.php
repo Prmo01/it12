@@ -34,7 +34,7 @@
                             <td>
                                 <div class="fw-semibold">{{ $item->name }}</div>
                                 @if($item->description)
-                                    <small class="text-muted">{{ Str::limit($item->description, 40) }}</small>
+                                    <small class="text-muted">{{ $item->description }}</small>
                                 @endif
                             </td>
                             <td>

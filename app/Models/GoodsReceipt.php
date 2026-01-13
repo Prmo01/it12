@@ -22,6 +22,11 @@ class GoodsReceipt extends Model
         'received_by',
         'approved_by',
         'approved_at',
+        'warehouse_approved_by',
+        'warehouse_approved_at',
+        'inventory_approved_by',
+        'inventory_approved_at',
+        'inventory_feedback',
         'rejected_at',
     ];
 
@@ -30,6 +35,8 @@ class GoodsReceipt extends Model
         return [
             'gr_date' => 'date',
             'approved_at' => 'datetime',
+            'warehouse_approved_at' => 'datetime',
+            'inventory_approved_at' => 'datetime',
             'rejected_at' => 'datetime',
         ];
     }
@@ -47,6 +54,16 @@ class GoodsReceipt extends Model
     public function approvedBy()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function warehouseApprovedBy()
+    {
+        return $this->belongsTo(User::class, 'warehouse_approved_by');
+    }
+
+    public function inventoryApprovedBy()
+    {
+        return $this->belongsTo(User::class, 'inventory_approved_by');
     }
 
     public function items()

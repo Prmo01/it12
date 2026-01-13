@@ -8,11 +8,59 @@
         <h1 class="h2 mb-1"><i class="bi bi-box-arrow-up"></i> Goods Returns</h1>
         <p class="text-muted mb-0">Manage returned goods and inventory adjustments</p>
     </div>
+    @if(auth()->user()->isAdmin() || auth()->user()->hasRole('inventory_manager') || auth()->user()->hasRole('warehouse_manager'))
     <a href="{{ route('goods-returns.create') }}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> New Return</a>
+    @endif
 </div>
 
 <div class="card gr-card">
     <div class="card-body">
+        <form method="GET" class="mb-4 filter-form">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label-custom-small">
+                        <i class="bi bi-search"></i> Search
+                    </label>
+                    <input type="text" name="search" class="form-control-custom" placeholder="Return Number, GR Number..." value="{{ request('search') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-custom-small">
+                        <i class="bi bi-funnel"></i> Status
+                    </label>
+                    <select name="status" class="form-control-custom">
+                        <option value="">All Statuses</option>
+                        <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                        <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-custom-small">
+                        <i class="bi bi-box-arrow-in-down"></i> Goods Receipt
+                    </label>
+                    <select name="goods_receipt_id" class="form-control-custom">
+                        <option value="">All Goods Receipts</option>
+                        @foreach(\App\Models\GoodsReceipt::orderBy('gr_number', 'desc')->get() as $gr)
+                            <option value="{{ $gr->id }}" {{ request('goods_receipt_id') == $gr->id ? 'selected' : '' }}>
+                                {{ $gr->gr_number }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="bi bi-search"></i> Filter
+                    </button>
+                    @if(request()->hasAny(['search', 'status', 'goods_receipt_id']))
+                    <a href="{{ route('goods-returns.index') }}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                    @endif
+                </div>
+            </div>
+        </form>
+        
         <div class="table-responsive">
             <table class="table table-modern">
                 <thead>
@@ -50,7 +98,7 @@
                                     <a href="{{ route('goods-returns.show', $return) }}" class="btn btn-sm btn-action btn-view" title="View">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    @if($return->status !== 'cancelled' && $return->status !== 'approved')
+                                    @if(($return->status !== 'cancelled' && $return->status !== 'approved') && (auth()->user()->isAdmin() || auth()->user()->hasRole('inventory_manager') || auth()->user()->hasRole('warehouse_manager')))
                                     <form action="{{ route('goods-returns.cancel', $return) }}" method="POST" class="d-inline cancel-form" data-id="{{ $return->id }}">
                                         @csrf
                                         <input type="hidden" name="cancellation_reason" class="cancel-reason-input">
@@ -89,6 +137,46 @@
         border-radius: 16px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         border: 1px solid #e5e7eb;
+    }
+    
+    .filter-form {
+        padding: 1.5rem;
+        background: #f9fafb;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .form-label-custom-small {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .form-label-custom-small i {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    
+    .form-control-custom {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 0.9375rem;
+        color: #111827;
+        background: #ffffff;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control-custom:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        background: #fafbff;
     }
     
     .table-modern {

@@ -63,7 +63,7 @@ class DashboardController extends Controller
 
         $totalProjects = Project::where('status', '!=', 'completed')->count();
         $activeProjects = Project::where('status', 'active')->count();
-        $pendingPOs = PurchaseOrder::where('status', 'pending')->count();
+        $pendingPOs = PurchaseOrder::whereIn('status', ['draft', 'pending'])->count();
         $lowStockItems = InventoryItem::get()->filter(function ($item) {
             return $this->stockService->checkReorderLevel($item->id);
         })->count();
@@ -83,7 +83,7 @@ class DashboardController extends Controller
         // Monthly POs - use chart-specific date or global date
         $poDateFrom = request('po_date_from') ? \Carbon\Carbon::parse(request('po_date_from'))->startOfDay() : $dateFrom;
         $poDateTo = request('po_date_to') ? \Carbon\Carbon::parse(request('po_date_to'))->endOfDay() : $dateTo;
-        $monthlyPOs = PurchaseOrder::selectRaw("TO_CHAR(created_at, 'YYYY-MM') as month, count(*) as count")
+        $monthlyPOs = PurchaseOrder::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as count")
             ->whereBetween('created_at', [$poDateFrom, $poDateTo])
             ->groupBy('month')
             ->orderBy('month')
@@ -92,7 +92,7 @@ class DashboardController extends Controller
         // Monthly Projects - use chart-specific date or global date
         $projectsDateFrom = request('projects_date_from') ? \Carbon\Carbon::parse(request('projects_date_from'))->startOfDay() : $dateFrom;
         $projectsDateTo = request('projects_date_to') ? \Carbon\Carbon::parse(request('projects_date_to'))->endOfDay() : $dateTo;
-        $monthlyProjects = Project::selectRaw("TO_CHAR(created_at, 'YYYY-MM') as month, count(*) as count")
+        $monthlyProjects = Project::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as count")
             ->whereBetween('created_at', [$projectsDateFrom, $projectsDateTo])
             ->groupBy('month')
             ->orderBy('month')
@@ -152,7 +152,7 @@ class DashboardController extends Controller
         // Monthly Receipts - use chart-specific date or global date
         $receiptsDateFrom = request('receipts_date_from') ? \Carbon\Carbon::parse(request('receipts_date_from'))->startOfDay() : $dateFrom;
         $receiptsDateTo = request('receipts_date_to') ? \Carbon\Carbon::parse(request('receipts_date_to'))->endOfDay() : $dateTo;
-        $monthlyReceipts = GoodsReceipt::selectRaw("TO_CHAR(created_at, 'YYYY-MM') as month, count(*) as count")
+        $monthlyReceipts = GoodsReceipt::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as count")
             ->whereBetween('created_at', [$receiptsDateFrom, $receiptsDateTo])
             ->groupBy('month')
             ->orderBy('month')
@@ -161,7 +161,7 @@ class DashboardController extends Controller
         // Monthly Issuances - use chart-specific date or global date
         $issuancesDateFrom = request('issuances_date_from') ? \Carbon\Carbon::parse(request('issuances_date_from'))->startOfDay() : $dateFrom;
         $issuancesDateTo = request('issuances_date_to') ? \Carbon\Carbon::parse(request('issuances_date_to'))->endOfDay() : $dateTo;
-        $monthlyIssuances = MaterialIssuance::selectRaw("TO_CHAR(created_at, 'YYYY-MM') as month, count(*) as count")
+        $monthlyIssuances = MaterialIssuance::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as count")
             ->whereBetween('created_at', [$issuancesDateFrom, $issuancesDateTo])
             ->groupBy('month')
             ->orderBy('month')
@@ -212,7 +212,7 @@ class DashboardController extends Controller
         // Monthly POs - use chart-specific date or global date
         $poDateFrom = request('po_date_from') ? \Carbon\Carbon::parse(request('po_date_from'))->startOfDay() : $dateFrom;
         $poDateTo = request('po_date_to') ? \Carbon\Carbon::parse(request('po_date_to'))->endOfDay() : $dateTo;
-        $monthlyPOs = PurchaseOrder::selectRaw("TO_CHAR(created_at, 'YYYY-MM') as month, count(*) as count")
+        $monthlyPOs = PurchaseOrder::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as count")
             ->whereBetween('created_at', [$poDateFrom, $poDateTo])
             ->groupBy('month')
             ->orderBy('month')
@@ -275,7 +275,7 @@ class DashboardController extends Controller
         $projectsDateFrom = request('projects_date_from') ? \Carbon\Carbon::parse(request('projects_date_from'))->startOfDay() : $dateFrom;
         $projectsDateTo = request('projects_date_to') ? \Carbon\Carbon::parse(request('projects_date_to'))->endOfDay() : $dateTo;
         $monthlyProjects = Project::where('project_manager_id', $user->id)
-            ->selectRaw("TO_CHAR(created_at, 'YYYY-MM') as month, count(*) as count")
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as count")
             ->whereBetween('created_at', [$projectsDateFrom, $projectsDateTo])
             ->groupBy('month')
             ->orderBy('month')
@@ -307,6 +307,11 @@ class DashboardController extends Controller
         $rejectedToday = GoodsReceipt::where('status', 'rejected')
             ->whereDate('rejected_at', today())
             ->count();
+        $approvedPOsReady = PurchaseOrder::where('status', 'approved')
+            ->whereDoesntHave('goodsReceipts', function ($q) {
+                $q->where('status', 'approved');
+            })
+            ->count();
 
         $recentReceipts = GoodsReceipt::with('purchaseOrder.supplier')->latest()->take(5)->get();
         $recentReturns = GoodsReturn::with('goodsReceipt.purchaseOrder.supplier')->latest()->take(5)->get();
@@ -321,7 +326,7 @@ class DashboardController extends Controller
         // Monthly Approvals - use chart-specific date or global date
         $approvalsDateFrom = request('approvals_date_from') ? \Carbon\Carbon::parse(request('approvals_date_from'))->startOfDay() : ($dateFrom ? \Carbon\Carbon::parse($dateFrom)->startOfDay() : now()->subMonths(6)->startOfDay());
         $approvalsDateTo = request('approvals_date_to') ? \Carbon\Carbon::parse(request('approvals_date_to'))->endOfDay() : ($dateTo ? \Carbon\Carbon::parse($dateTo)->endOfDay() : now()->endOfDay());
-        $monthlyApprovals = GoodsReceipt::selectRaw("TO_CHAR(approved_at, 'YYYY-MM') as month, count(*) as count")
+        $monthlyApprovals = GoodsReceipt::selectRaw("DATE_FORMAT(approved_at, '%Y-%m') as month, count(*) as count")
             ->whereNotNull('approved_at')
             ->whereBetween('approved_at', [$approvalsDateFrom, $approvalsDateTo])
             ->groupBy('month')
@@ -338,6 +343,7 @@ class DashboardController extends Controller
             'pendingReturns',
             'approvedToday',
             'rejectedToday',
+            'approvedPOsReady',
             'recentReceipts',
             'recentReturns',
             'receiptStatusData',
@@ -356,7 +362,7 @@ class DashboardController extends Controller
         $dateFrom = $dateFrom ? \Carbon\Carbon::parse($dateFrom)->startOfDay() : now()->subDays(30)->startOfDay();
         $dateTo = $dateTo ? \Carbon\Carbon::parse($dateTo)->endOfDay() : now()->endOfDay();
 
-        $inventoryMovementsRaw = \App\Models\StockMovement::selectRaw("created_at::date as date, movement_type, SUM(quantity) as total")
+        $inventoryMovementsRaw = \App\Models\StockMovement::selectRaw("DATE(created_at) as date, movement_type, SUM(quantity) as total")
             ->whereBetween('created_at', [$dateFrom, $dateTo])
             ->groupBy('date', 'movement_type')
             ->orderBy('date')

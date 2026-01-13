@@ -21,9 +21,8 @@
                 <thead>
                     <tr>
                         <th>#</th>
+                        <th>Project Name</th>
                         <th>PO Number</th>
-                        <th>Project Code</th>
-                        <th>Suppliers</th>
                         <th>Date</th>
                         <th>Actions</th>
                     </tr>
@@ -32,35 +31,29 @@
                     @forelse($purchaseOrders as $index => $po)
                         <tr>
                             <td><span class="text-muted">{{ ($purchaseOrders->currentPage() - 1) * $purchaseOrders->perPage() + $index + 1 }}</span></td>
+                            <td>
+                                @if($po->purchaseRequest && $po->purchaseRequest->project)
+                                    <span class="fw-semibold">{{ $po->purchaseRequest->project->name }}</span>
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
                             <td><span class="text-muted font-monospace">{{ $po->po_number }}</span></td>
-                            <td>
-                                @if($po->project_code)
-                                    <span class="project-code-text">{{ $po->project_code }}</span>
-                                @else
-                                    <span class="text-muted">N/A</span>
-                                @endif
-                            </td>
-                            <td>
-                                @php
-                                    $suppliers = $po->items->pluck('supplier')->filter()->unique('id');
-                                @endphp
-                                @if($suppliers->count() > 0)
-                                    <div class="d-flex flex-column gap-1">
-                                        @foreach($suppliers->take(2) as $supplier)
-                                            <span class="supplier-text">{{ $supplier->name }}</span>
-                                        @endforeach
-                                        @if($suppliers->count() > 2)
-                                            <span class="text-muted small">+{{ $suppliers->count() - 2 }} more</span>
-                                        @endif
-                                    </div>
-                                @else
-                                    <span class="text-muted">N/A</span>
-                                @endif
-                            </td>
                             <td><span class="text-muted">{{ $po->po_date->format('M d, Y') }}</span></td>
                             <td>
                                 <div class="action-buttons">
-                                    <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                    @php
+                                        $suppliers = $po->items->pluck('supplier')->filter()->unique('id');
+                                        $supplierNames = $suppliers->pluck('name')->implode(', ');
+                                        $tooltip = 'View';
+                                        if ($po->project_code) {
+                                            $tooltip .= ' - Project Code: ' . $po->project_code;
+                                        }
+                                        if ($supplierNames) {
+                                            $tooltip .= ' - Suppliers: ' . $supplierNames;
+                                        }
+                                    @endphp
+                                    <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-action btn-view" title="{{ $tooltip }}">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                     <form method="POST" action="{{ route('purchase-orders.approve', $po) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to approve this purchase order?');">
@@ -84,7 +77,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-5">
+                            <td colspan="5" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="bi bi-check-circle"></i>
                                     <p class="mt-3 mb-0">No pending purchase orders</p>

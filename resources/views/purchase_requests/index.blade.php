@@ -8,11 +8,59 @@
         <h1 class="h2 mb-1"><i class="bi bi-file-earmark-text"></i> Purchase Requests</h1>
         <p class="text-muted mb-0">Manage and track all purchase requests</p>
     </div>
+    @if(auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing') || auth()->user()->hasRole('project_manager'))
     <a href="{{ route('purchase-requests.create') }}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> New PR</a>
+    @endif
 </div>
 
 <div class="card pr-card">
     <div class="card-body">
+        <form method="GET" class="mb-4 filter-form">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label-custom-small">
+                        <i class="bi bi-search"></i> Search
+                    </label>
+                    <input type="text" name="search" class="form-control-custom" placeholder="PR Number, Project..." value="{{ request('search') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-custom-small">
+                        <i class="bi bi-funnel"></i> Status
+                    </label>
+                    <select name="status" class="form-control-custom">
+                        <option value="">All Statuses</option>
+                        <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
+                        <option value="submitted" {{ request('status') == 'submitted' ? 'selected' : '' }}>Submitted</option>
+                        <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                        <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-custom-small">
+                        <i class="bi bi-folder"></i> Project
+                    </label>
+                    <select name="project_id" class="form-control-custom">
+                        <option value="">All Projects</option>
+                        @foreach(\App\Models\Project::orderBy('name')->get() as $proj)
+                            <option value="{{ $proj->id }}" {{ request('project_id') == $proj->id ? 'selected' : '' }}>
+                                {{ $proj->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="bi bi-search"></i> Filter
+                    </button>
+                    @if(request()->hasAny(['search', 'status', 'project_id']))
+                    <a href="{{ route('purchase-requests.index') }}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                    @endif
+                </div>
+            </div>
+        </form>
+        
         <div class="table-responsive">
             <table class="table table-modern">
                 <thead>
@@ -44,29 +92,15 @@
                                     <a href="{{ route('purchase-requests.show', $pr) }}" class="btn btn-sm btn-action btn-view" title="View">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    @if($pr->status === 'submitted')
-                                        <form method="POST" action="{{ route('purchase-requests.approve', $pr) }}" class="d-inline" onsubmit="return confirm('Approve this purchase request?')">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm btn-action" style="background: #10b981; color: #ffffff;" title="Approve">
-                                                <i class="bi bi-check-circle"></i>
-                                            </button>
-                                        </form>
-                                    @endif
-                                    @if($pr->status === 'draft')
+                                    @if(($pr->status === 'draft') && (auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing') || auth()->user()->hasRole('project_manager')))
                                         <form method="POST" action="{{ route('purchase-requests.submit', $pr) }}" class="d-inline" onsubmit="return confirm('Submit this purchase request for approval?')">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-action" style="background: #2563eb; color: #ffffff;" title="Submit">
                                                 <i class="bi bi-send"></i>
                                             </button>
                                         </form>
-                                        <form method="POST" action="{{ route('purchase-requests.approve', $pr) }}" class="d-inline" onsubmit="return confirm('Approve this purchase request directly?')">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm btn-action" style="background: #10b981; color: #ffffff;" title="Approve Directly">
-                                                <i class="bi bi-check-circle"></i>
-                                            </button>
-                                        </form>
                                     @endif
-                                    @if($pr->status !== 'cancelled' && !$pr->quotations()->exists())
+                                    @if($pr->status !== 'cancelled' && !$pr->quotations()->exists() && (auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing') || auth()->user()->hasRole('project_manager')))
                                     <form action="{{ route('purchase-requests.cancel', $pr) }}" method="POST" class="d-inline cancel-form" data-id="{{ $pr->id }}">
                                         @csrf
                                         <input type="hidden" name="cancellation_reason" class="cancel-reason-input">
@@ -105,6 +139,46 @@
         border-radius: 16px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         border: 1px solid #e5e7eb;
+    }
+    
+    .filter-form {
+        padding: 1.5rem;
+        background: #f9fafb;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .form-label-custom-small {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .form-label-custom-small i {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    
+    .form-control-custom {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 0.9375rem;
+        color: #111827;
+        background: #ffffff;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control-custom:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        background: #fafbff;
     }
     
     .table-modern {

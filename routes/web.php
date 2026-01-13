@@ -171,7 +171,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:admin,inventory_manager,warehouse_manager,purchasing,project_manager');
     Route::post('goods-receipts/{goodsReceipt}/approve', [GoodsReceiptController::class, 'approve'])
         ->name('goods-receipts.approve')
-        ->middleware('role:admin,inventory_manager,warehouse_manager');
+        ->middleware('role:admin,inventory_manager');
     Route::post('goods-receipts/{goodsReceipt}/cancel', [GoodsReceiptController::class, 'cancel'])
         ->name('goods-receipts.cancel')
         ->middleware('role:admin,inventory_manager,warehouse_manager');

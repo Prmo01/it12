@@ -9,7 +9,7 @@
         <p class="text-muted mb-0">{{ $purchaseRequest->pr_number }}</p>
     </div>
     <div class="d-flex gap-2">
-        @if($purchaseRequest->status === 'draft')
+        @if(($purchaseRequest->status === 'draft') && (auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing') || auth()->user()->hasRole('project_manager')))
             <form method="POST" action="{{ route('purchase-requests.submit', $purchaseRequest) }}" class="d-inline">
                 @csrf
                 <button type="submit" class="btn btn-primary" onclick="return confirm('Submit this purchase request for approval?')">
@@ -17,23 +17,7 @@
                 </button>
             </form>
         @endif
-        @if($purchaseRequest->status === 'submitted')
-            <form method="POST" action="{{ route('purchase-requests.approve', $purchaseRequest) }}" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-success" onclick="return confirm('Approve this purchase request? It will be available for quotation creation.')">
-                    <i class="bi bi-check-circle"></i> Approve
-                </button>
-            </form>
-        @endif
-        @if($purchaseRequest->status === 'draft')
-            <form method="POST" action="{{ route('purchase-requests.approve', $purchaseRequest) }}" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-success" onclick="return confirm('Approve this purchase request directly? It will be available for quotation creation.')">
-                    <i class="bi bi-check-circle"></i> Approve Directly
-                </button>
-            </form>
-        @endif
-        @if($purchaseRequest->status !== 'cancelled' && !$purchaseRequest->quotations()->exists())
+        @if($purchaseRequest->status !== 'cancelled' && !$purchaseRequest->quotations()->exists() && (auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing') || auth()->user()->hasRole('project_manager')))
         <form action="{{ route('purchase-requests.cancel', $purchaseRequest) }}" method="POST" class="d-inline" id="cancelPRForm">
             @csrf
             <input type="hidden" name="cancellation_reason" id="cancelPRReason">
@@ -152,11 +136,6 @@
         <div class="info-card mt-4">
             <div class="info-card-header">
                 <h5 class="info-card-title"><i class="bi bi-file-earmark-spreadsheet"></i> Quotations Received</h5>
-                @if($purchaseRequest->quotations->whereIn('status', ['pending', 'accepted'])->count() >= 2)
-                <a href="{{ route('quotations.compare', ['purchase_request_id' => $purchaseRequest->id]) }}" class="btn btn-sm btn-success">
-                    <i class="bi bi-bar-chart"></i> Compare
-                </a>
-                @endif
             </div>
             <div class="info-card-body">
                 <div class="table-responsive">
@@ -202,6 +181,7 @@
                 <h5 class="quick-actions-title"><i class="bi bi-lightning"></i> Quick Actions</h5>
             </div>
             <div class="quick-actions-body">
+                @if(auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing'))
                 <a href="{{ route('quotations.create', ['purchase_request_id' => $purchaseRequest->id]) }}" class="quick-action-btn">
                     <div class="quick-action-icon bg-primary">
                         <i class="bi bi-file-earmark-spreadsheet"></i>
@@ -209,20 +189,6 @@
                     <div class="quick-action-content">
                         <span class="quick-action-label">Create Quotation</span>
                         <small class="quick-action-desc">Generate quotation for this PR</small>
-                    </div>
-                    <i class="bi bi-chevron-right"></i>
-                </a>
-                @php
-                    $quotationCount = $purchaseRequest->quotations()->whereIn('status', ['pending', 'accepted'])->count();
-                @endphp
-                @if($quotationCount >= 2)
-                <a href="{{ route('quotations.compare', ['purchase_request_id' => $purchaseRequest->id]) }}" class="quick-action-btn">
-                    <div class="quick-action-icon bg-success">
-                        <i class="bi bi-bar-chart"></i>
-                    </div>
-                    <div class="quick-action-content">
-                        <span class="quick-action-label">Compare Quotations</span>
-                        <small class="quick-action-desc">Compare prices from {{ $quotationCount }} suppliers</small>
                     </div>
                     <i class="bi bi-chevron-right"></i>
                 </a>

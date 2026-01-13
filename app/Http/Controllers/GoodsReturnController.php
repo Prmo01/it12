@@ -21,11 +21,27 @@ class GoodsReturnController extends Controller
     {
         $query = GoodsReturn::with(['goodsReceipt.purchaseOrder', 'returnedBy', 'approvedBy']);
 
-        if ($request->has('status')) {
+        if ($request->has('status') && $request->status != '') {
             $query->where('status', $request->status);
         }
 
-        $goodsReturns = $query->latest()->paginate(15);
+        if ($request->has('goods_receipt_id') && $request->goods_receipt_id != '') {
+            $query->where('goods_receipt_id', $request->goods_receipt_id);
+        }
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('return_number', 'like', "%{$search}%")
+                  ->orWhere('project_code', 'like', "%{$search}%")
+                  ->orWhere('reason', 'like', "%{$search}%")
+                  ->orWhereHas('goodsReceipt', function($q) use ($search) {
+                      $q->where('gr_number', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $goodsReturns = $query->latest()->paginate(15)->withQueryString();
 
         return view('goods_returns.index', compact('goodsReturns'));
     }
@@ -70,13 +86,18 @@ class GoodsReturnController extends Controller
         $validated = $request->validate([
             'goods_receipt_id' => 'required|exists:goods_receipts,id',
             'return_date' => 'required|date',
-            'reason' => 'required|string',
+            'reason' => 'required|string|min:10',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.goods_receipt_item_id' => 'required|exists:goods_receipt_items,id',
             'items.*.inventory_item_id' => 'required|exists:inventory_items,id',
             'items.*.quantity' => 'required|numeric|min:0',
-            'items.*.reason' => 'nullable|string',
+            'items.*.reason' => 'required_if:items.*.quantity,>,0|nullable|string|min:10',
+        ], [
+            'reason.required' => 'Please provide a reason for this return.',
+            'reason.min' => 'Reason must be at least 10 characters.',
+            'items.*.reason.required_if' => 'Item reason is required when returning items.',
+            'items.*.reason.min' => 'Item reason must be at least 10 characters.',
         ]);
 
         // Verify goods receipt is approved
@@ -85,7 +106,7 @@ class GoodsReturnController extends Controller
             return back()->withErrors(['goods_receipt_id' => 'Can only create returns from approved goods receipts.'])->withInput();
         }
 
-        // Validate return quantities don't exceed accepted quantities
+        // Validate return quantities don't exceed accepted quantities and item reasons are provided
         foreach ($validated['items'] as $index => $item) {
             $grItem = \App\Models\GoodsReceiptItem::findOrFail($item['goods_receipt_item_id']);
             
@@ -105,6 +126,11 @@ class GoodsReturnController extends Controller
             
             if ($item['quantity'] > $availableToReturn) {
                 return back()->withErrors(['items.' . $index . '.quantity' => "Return quantity cannot exceed available quantity ({$availableToReturn})."])->withInput();
+            }
+            
+            // Require item reason when quantity > 0
+            if ($item['quantity'] > 0 && (empty($item['reason']) || strlen(trim($item['reason'])) < 10)) {
+                return back()->withErrors(['items.' . $index . '.reason' => 'Item reason is required and must be at least 10 characters when returning items.'])->withInput();
             }
         }
 

@@ -62,7 +62,14 @@ class ReportsController extends Controller
             }
         }
 
-        $projects = \App\Models\Project::orderBy('name')->get();
+        $projectsQuery = \App\Models\Project::query();
+        
+        // Filter projects for project managers - show only their assigned projects
+        if (auth()->user()->hasRole('project_manager')) {
+            $projectsQuery->where('project_manager_id', auth()->id());
+        }
+        
+        $projects = $projectsQuery->orderBy('name')->get();
         return view('reports.project_consumption', compact('data', 'filters', 'projects'));
     }
 

@@ -21,15 +21,33 @@ class ChangeOrderController extends Controller
     {
         $query = ChangeOrder::with(['project', 'requestedBy', 'approvedBy']);
 
-        if ($request->has('project_id')) {
+        // Filter for project managers - show only their projects
+        if (auth()->user()->hasRole('project_manager')) {
+            $query->whereHas('project', function($q) {
+                $q->where('project_manager_id', auth()->id());
+            });
+        }
+
+        if ($request->has('project_id') && $request->project_id != '') {
             $query->where('project_id', $request->project_id);
         }
 
-        if ($request->has('status')) {
+        if ($request->has('status') && $request->status != '') {
             $query->where('status', $request->status);
         }
 
-        $changeOrders = $query->latest()->paginate(15);
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('change_order_number', 'like', "%{$search}%")
+                  ->orWhereHas('project', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('project_code', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $changeOrders = $query->latest()->paginate(15)->withQueryString();
 
         return view('change_orders.index', compact('changeOrders'));
     }
@@ -40,7 +58,15 @@ class ChangeOrderController extends Controller
         if ($request->has('project_id')) {
             $project = Project::findOrFail($request->project_id);
         }
-        return view('change_orders.create', compact('project'));
+        
+        // Get projects for dropdown - filter for project managers
+        $projectsQuery = Project::query();
+        if (auth()->user()->hasRole('project_manager')) {
+            $projectsQuery->where('project_manager_id', auth()->id());
+        }
+        $projects = $projectsQuery->orderBy('name')->get();
+        
+        return view('change_orders.create', compact('project', 'projects'));
     }
 
     public function store(Request $request)

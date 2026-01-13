@@ -6,20 +6,91 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center page-header">
     <div>
         <h1 class="h2 mb-1"><i class="bi bi-cart-check"></i> Purchase Orders</h1>
-        <p class="text-muted mb-0">Manage and track all purchase orders</p>
+        <p class="text-muted mb-0">
+            @if(auth()->user()->hasRole('warehouse_manager'))
+                Approved purchase orders ready for goods receipt
+            @else
+                Manage and track all purchase orders
+            @endif
+        </p>
+        @php
+            $pendingCount = \App\Models\PurchaseOrder::whereIn('status', ['draft', 'pending'])->count();
+        @endphp
+        @if(auth()->user()->isAdmin() && $pendingCount > 0)
+        <div class="mt-2">
+            <a href="{{ route('purchase-orders.pending') }}" class="badge bg-warning text-dark" style="font-size: 0.875rem; padding: 0.5rem 0.75rem; text-decoration: none;">
+                <i class="bi bi-hourglass-split"></i> {{ $pendingCount }} {{ $pendingCount === 1 ? 'PO' : 'POs' }} awaiting approval
+            </a>
+        </div>
+        @endif
     </div>
-    <a href="{{ route('purchase-orders.create') }}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> New PO</a>
+    <div class="d-flex gap-2">
+        @if(auth()->user()->isAdmin() && $pendingCount > 0)
+        <a href="{{ route('purchase-orders.pending') }}" class="btn btn-warning">
+            <i class="bi bi-hourglass-split"></i> Pending ({{ $pendingCount }})
+        </a>
+        @endif
+        @if(auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing'))
+        <a href="{{ route('purchase-orders.create') }}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> New PO</a>
+        @endif
+    </div>
 </div>
 
 <div class="card po-card">
     <div class="card-body">
+        <form method="GET" class="mb-4 filter-form">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label-custom-small">
+                        <i class="bi bi-search"></i> Search
+                    </label>
+                    <input type="text" name="search" class="form-control-custom" placeholder="PO Number, Project Code..." value="{{ request('search') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-custom-small">
+                        <i class="bi bi-funnel"></i> Status
+                    </label>
+                    <select name="status" class="form-control-custom">
+                        <option value="">All Statuses</option>
+                        <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                        <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                        <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-custom-small">
+                        <i class="bi bi-truck"></i> Supplier
+                    </label>
+                    <select name="supplier_id" class="form-control-custom">
+                        <option value="">All Suppliers</option>
+                        @foreach(\App\Models\Supplier::orderBy('name')->get() as $supplier)
+                            <option value="{{ $supplier->id }}" {{ request('supplier_id') == $supplier->id ? 'selected' : '' }}>
+                                {{ $supplier->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="bi bi-search"></i> Filter
+                    </button>
+                    @if(request()->hasAny(['search', 'status', 'supplier_id']))
+                    <a href="{{ route('purchase-orders.index') }}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                    @endif
+                </div>
+            </div>
+        </form>
+        
         <div class="table-responsive">
             <table class="table table-modern">
                 <thead>
                     <tr>
+                        <th>Project Name</th>
                         <th>PO Number</th>
-                        <th>Project Code</th>
-                        <th>Suppliers</th>
                         <th>Date</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -28,43 +99,37 @@
                 <tbody>
                     @forelse($purchaseOrders as $po)
                         <tr>
+                            <td>
+                                @if($po->purchaseRequest && $po->purchaseRequest->project)
+                                    <span class="fw-semibold">{{ $po->purchaseRequest->project->name }}</span>
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
                             <td><span class="text-muted font-monospace">{{ $po->po_number }}</span></td>
-                            <td>
-                                @if($po->project_code)
-                                    <span class="project-code-text">{{ $po->project_code }}</span>
-                                @else
-                                    <span class="text-muted">N/A</span>
-                                @endif
-                            </td>
-                            <td>
-                                @php
-                                    $suppliers = $po->items->pluck('supplier')->filter()->unique('id');
-                                @endphp
-                                @if($suppliers->count() > 0)
-                                    <div class="d-flex flex-column gap-1">
-                                        @foreach($suppliers->take(2) as $supplier)
-                                            <span class="supplier-text">{{ $supplier->name }}</span>
-                                        @endforeach
-                                        @if($suppliers->count() > 2)
-                                            <span class="text-muted small">+{{ $suppliers->count() - 2 }} more</span>
-                                        @endif
-                                    </div>
-                                @else
-                                    <span class="text-muted">N/A</span>
-                                @endif
-                            </td>
                             <td><span class="text-muted">{{ $po->po_date->format('M d, Y') }}</span></td>
                             <td>
-                                <span class="status-text status-text-{{ $po->status === 'approved' ? 'success' : ($po->status === 'pending' ? 'primary' : ($po->status === 'completed' ? 'info' : 'warning')) }}">
+                                <span class="status-text status-text-{{ $po->status === 'approved' ? 'success' : ($po->status === 'pending' || $po->status === 'draft' ? 'primary' : ($po->status === 'completed' ? 'info' : 'warning')) }}">
                                     {{ ucfirst($po->status) }}
                                 </span>
                             </td>
                             <td>
                                 <div class="action-buttons">
-                                    <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                    @php
+                                        $suppliers = $po->items->pluck('supplier')->filter()->unique('id');
+                                        $supplierNames = $suppliers->pluck('name')->implode(', ');
+                                        $tooltip = 'View';
+                                        if ($po->project_code) {
+                                            $tooltip .= ' - Project Code: ' . $po->project_code;
+                                        }
+                                        if ($supplierNames) {
+                                            $tooltip .= ' - Suppliers: ' . $supplierNames;
+                                        }
+                                    @endphp
+                                    <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-action btn-view" title="{{ $tooltip }}">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    @if(in_array($po->status, ['draft', 'pending']))
+                                    @if(auth()->user()->isAdmin() && in_array($po->status, ['draft', 'pending']))
                                     <form method="POST" action="{{ route('purchase-orders.approve', $po) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to approve this purchase order?');">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-action btn-approve" title="Approve">
@@ -75,7 +140,12 @@
                                     <a href="{{ route('purchase-orders.print', $po) }}" class="btn btn-sm btn-action btn-print" title="Print">
                                         <i class="bi bi-printer"></i>
                                     </a>
-                                    @if($po->status !== 'cancelled')
+                                    @if(auth()->user()->hasRole('warehouse_manager') && $po->status === 'approved' && !$po->goodsReceipts()->where('status', 'approved')->exists())
+                                    <a href="{{ route('goods-receipts.create', ['purchase_order_id' => $po->id]) }}" class="btn btn-sm btn-action btn-success" title="Create Goods Receipt">
+                                        <i class="bi bi-box-arrow-in-down"></i>
+                                    </a>
+                                    @endif
+                                    @if($po->status !== 'cancelled' && (auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing')))
                                     <form action="{{ route('purchase-orders.cancel', $po) }}" method="POST" class="d-inline cancel-form" data-id="{{ $po->id }}">
                                         @csrf
                                         <input type="hidden" name="cancellation_reason" class="cancel-reason-input">
@@ -89,7 +159,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-5">
+                            <td colspan="6" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="bi bi-cart-x"></i>
                                     <p class="mt-3 mb-0">No purchase orders found</p>
@@ -116,6 +186,45 @@
         border: 1px solid #e5e7eb;
     }
     
+    .filter-form {
+        padding: 1.5rem;
+        background: #f9fafb;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .form-label-custom-small {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .form-label-custom-small i {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    
+    .form-control-custom {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 0.9375rem;
+        color: #111827;
+        background: #ffffff;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control-custom:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        background: #fafbff;
+    }
     
     .table-modern {
         margin-bottom: 0;

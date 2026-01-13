@@ -9,13 +9,10 @@
         <p class="text-muted mb-0">{{ $goodsReceipt->gr_number }}</p>
     </div>
     <div class="d-flex gap-2">
-        @if(in_array($goodsReceipt->status, ['draft', 'pending']))
-            <form method="POST" action="{{ route('goods-receipts.approve', $goodsReceipt) }}" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-success">
-                    <i class="bi bi-check-circle"></i> Approve & Update Stock
-                </button>
-            </form>
+        @if($goodsReceipt->status === 'pending' && (auth()->user()->hasRole('inventory_manager') || auth()->user()->isAdmin()))
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#inventoryApproveModal">
+                <i class="bi bi-check-circle"></i> Approve & Update Stock
+            </button>
         @endif
         @if($goodsReceipt->status !== 'cancelled' && $goodsReceipt->status !== 'approved')
         <form action="{{ route('goods-receipts.cancel', $goodsReceipt) }}" method="POST" class="d-inline" id="cancelGRForm">
@@ -71,7 +68,7 @@
                         <span class="info-label">Status</span>
                         <span class="info-value">
                             <span class="status-text status-text-{{ $goodsReceipt->status === 'approved' ? 'success' : ($goodsReceipt->status === 'pending' ? 'primary' : 'warning') }}">
-                                {{ ucfirst($goodsReceipt->status) }}
+                                {{ ucfirst(str_replace('_', ' ', $goodsReceipt->status)) }}
                             </span>
                         </span>
                     </div>
@@ -470,5 +467,36 @@
     
 </style>
 @endpush
+
+<!-- Inventory Approval Modal -->
+@if($goodsReceipt->status === 'pending' && (auth()->user()->hasRole('inventory_manager') || auth()->user()->isAdmin()))
+<div class="modal fade" id="inventoryApproveModal" tabindex="-1" aria-labelledby="inventoryApproveModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="inventoryApproveModalLabel">Approve Goods Receipt & Update Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('goods-receipts.approve', $goodsReceipt) }}">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Please review the received items and provide feedback (optional):</p>
+                    <div class="mb-3">
+                        <label for="inventory_feedback" class="form-label">Feedback / Notes</label>
+                        <textarea name="inventory_feedback" id="inventory_feedback" class="form-control" rows="4" placeholder="Enter feedback about the received items (e.g., items are correct, some items damaged, etc.)"></textarea>
+                        <small class="text-muted">Optional: Add notes about item condition, damages, or any discrepancies.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Approve & Update Stock
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 @endsection

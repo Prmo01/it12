@@ -8,18 +8,72 @@
         <h1 class="h2 mb-1"><i class="bi bi-plus-circle"></i> Add Additional Project</h1>
         <p class="text-muted mb-0">Manage additional project changes and modifications</p>
     </div>
+    @if(auth()->user()->isAdmin() || auth()->user()->hasRole('project_manager'))
     <a href="{{ route('change-orders.create') }}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Add</a>
+    @endif
 </div>
 
 <div class="card change-orders-card">
     <div class="card-body">
+        <form method="GET" class="mb-4 filter-form">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label-custom-small">
+                        <i class="bi bi-search"></i> Search
+                    </label>
+                    <input type="text" name="search" class="form-control-custom" placeholder="CO Number, Project..." value="{{ request('search') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-custom-small">
+                        <i class="bi bi-funnel"></i> Status
+                    </label>
+                    <select name="status" class="form-control-custom">
+                        <option value="">All Statuses</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                        <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                        <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label-custom-small">
+                        <i class="bi bi-folder"></i> Project
+                    </label>
+                    <select name="project_id" class="form-control-custom">
+                        <option value="">All Projects</option>
+                        @php
+                            $projectsQuery = \App\Models\Project::query();
+                            if (auth()->user()->hasRole('project_manager')) {
+                                $projectsQuery->where('project_manager_id', auth()->id());
+                            }
+                            $projects = $projectsQuery->orderBy('name')->get();
+                        @endphp
+                        @foreach($projects as $proj)
+                            <option value="{{ $proj->id }}" {{ request('project_id') == $proj->id ? 'selected' : '' }}>
+                                {{ $proj->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="bi bi-search"></i> Filter
+                    </button>
+                    @if(request()->hasAny(['search', 'status', 'project_id']))
+                    <a href="{{ route('change-orders.index') }}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                    @endif
+                </div>
+            </div>
+        </form>
+        
         <div class="table-responsive">
             <table class="table table-modern">
                 <thead>
                     <tr>
                         <th>Change Order Number</th>
                         <th>Project</th>
-                        <th>Description</th>
                         <th>Additional Days</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -28,12 +82,11 @@
                 <tbody>
                     @forelse($changeOrders as $co)
                         <tr>
-                            <td><span class="text-muted font-monospace">{{ $co->change_order_number }}</span></td>
                             <td>
-                                <div class="fw-semibold">{{ $co->project->name }}</div>
+                                <span class="text-muted font-monospace">{{ $co->change_order_number }}</span>
                             </td>
                             <td>
-                                <div class="fw-semibold">{{ Str::limit($co->description, 50) }}</div>
+                                <div class="fw-semibold">{{ $co->project->name }}</div>
                             </td>
                             <td>
                                 <span class="badge badge-info">{{ $co->additional_days }} days</span>
@@ -45,14 +98,14 @@
                             </td>
                             <td>
                                 <div class="action-buttons">
-                                    <a href="{{ route('change-orders.show', $co) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                    <a href="{{ route('change-orders.show', $co) }}" class="btn btn-sm btn-action btn-view" title="View - {{ $co->description }}">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    @if($co->status !== 'cancelled' && $co->status !== 'approved')
+                                    @if(($co->status !== 'cancelled' && $co->status !== 'approved') && (auth()->user()->isAdmin() || auth()->user()->hasRole('project_manager')))
                                     <form action="{{ route('change-orders.cancel', $co) }}" method="POST" class="d-inline cancel-form" data-id="{{ $co->id }}">
                                         @csrf
                                         <input type="hidden" name="cancellation_reason" class="cancel-reason-input">
-                                        <button type="button" class="btn btn-sm btn-action btn-warning cancel-btn" title="Cancel">
+                                        <button type="button" class="btn btn-sm btn-action btn-warning cancel-btn" title="Cancel - {{ $co->description }}">
                                             <i class="bi bi-x-circle"></i>
                                         </button>
                                     </form>
@@ -62,7 +115,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5">
+                            <td colspan="5" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="bi bi-file-earmark-plus"></i>
                                     <p class="mt-3 mb-0">No additional projects found</p>
@@ -89,6 +142,46 @@
         border: 1px solid #e5e7eb;
     }
     
+    .filter-form {
+        padding: 1.5rem;
+        background: #f9fafb;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .form-label-custom-small {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .form-label-custom-small i {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    
+    .form-control-custom {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 0.9375rem;
+        color: #111827;
+        background: #ffffff;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control-custom:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        background: #fafbff;
+    }
+    
     .table-modern {
         margin-bottom: 0;
     }
@@ -108,6 +201,10 @@
         padding: 1.25rem 1rem;
         vertical-align: middle;
         border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .table-modern tbody td:first-child {
+        text-align: left;
     }
     
     .table-modern tbody tr {

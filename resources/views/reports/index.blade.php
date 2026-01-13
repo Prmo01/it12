@@ -10,7 +10,16 @@
     </div>
 </div>
 
+@php
+    $user = auth()->user();
+    $canViewInventoryMovement = $user && ($user->isAdmin() || $user->hasRole('inventory_manager') || $user->hasRole('warehouse_manager'));
+    $canViewPurchaseHistory = $user && ($user->isAdmin() || $user->hasRole('purchasing'));
+    $canViewSupplierPerformance = $user && ($user->isAdmin() || $user->hasRole('purchasing'));
+    $canViewProjectConsumption = $user && ($user->isAdmin() || $user->hasRole('inventory_manager') || $user->hasRole('project_manager'));
+@endphp
+
 <div class="row g-4">
+    @if($canViewInventoryMovement)
     <div class="col-md-6 col-lg-4">
         <div class="report-card">
             <div class="report-card-icon inventory-icon">
@@ -25,7 +34,9 @@
             </div>
         </div>
     </div>
+    @endif
     
+    @if($canViewPurchaseHistory)
     <div class="col-md-6 col-lg-4">
         <div class="report-card">
             <div class="report-card-icon purchase-icon">
@@ -40,7 +51,9 @@
             </div>
         </div>
     </div>
+    @endif
     
+    @if($canViewSupplierPerformance)
     <div class="col-md-6 col-lg-4">
         <div class="report-card">
             <div class="report-card-icon supplier-icon">
@@ -55,7 +68,9 @@
             </div>
         </div>
     </div>
+    @endif
     
+    @if($canViewProjectConsumption)
     <div class="col-md-6 col-lg-4">
         <div class="report-card">
             <div class="report-card-icon consumption-icon">
@@ -70,6 +85,7 @@
             </div>
         </div>
     </div>
+    @endif
 </div>
 
 @push('styles')

@@ -189,13 +189,7 @@
                         <i class="bi bi-person-fill"></i>
                     </div>
                     <div>
-                        <div class="fw-semibold" style="font-size: 1rem;">{{ auth()->user()->name ?? 'User' }}</div>
-                        <small class="text-white-50" style="font-size: 0.9375rem;">{{ auth()->user()->email ?? 'user@example.com' }}</small>
-                        @if(auth()->user() && auth()->user()->role)
-                        <div class="mt-1">
-                            <span class="badge bg-primary" style="font-size: 0.875rem;">{{ auth()->user()->role->name }}</span>
-                        </div>
-                        @endif
+                        <div class="fw-semibold" style="font-size: 1.0625rem;">{{ auth()->user()->name ?? 'User' }}</div>
                     </div>
                 </div>
                 <div class="dropdown">
@@ -271,17 +265,17 @@
     display: flex;
     flex-direction: column;
     min-height: 100%;
-    padding: 1.5rem 1rem 1rem 1rem;
+    padding: 2rem 1.25rem 1.5rem 1.25rem; /* Increased padding */
     flex: 1;
 }
 .nav-link {
     color: #cbd5f5;
-    padding: 0.875rem 1.25rem;
+    padding: 1rem 1.5rem; /* Increased padding */
     border-radius: 12px;
     transition: all 0.2s ease;
     font-weight: 500;
-    margin-bottom: 0.4rem;
-    font-size: 1rem; /* 18px - increased */
+    margin-bottom: 0.5rem; /* Increased margin */
+    font-size: 1.0625rem; /* 21.25px - increased */
 }
 .nav-link-group {
     width: 100%;
@@ -299,22 +293,22 @@
     transform: rotate(180deg);
 }
 .sub-nav {
-    padding-left: 0.5rem;
-    margin-top: 0.35rem;
+    padding-left: 0.75rem; /* Increased padding */
+    margin-top: 0.5rem; /* Increased margin */
 }
 .sub-nav .nav-link {
-    font-size: 0.9375rem; /* 16.875px - increased */
-    padding: 0.7rem 1.25rem 0.7rem 2.5rem;
+    font-size: 1rem; /* 20px - increased */
+    padding: 0.875rem 1.5rem 0.875rem 3rem; /* Increased padding */
     border-radius: 10px;
     color: #e2e8f0;
 }
 .sub-nav .nav-link i {
-    font-size: 1rem; /* 18px - increased */
+    font-size: 1.0625rem; /* 21.25px - increased */
 }
 .nav-link i {
-    margin-right: 0.75rem;
-    font-size: 1.125rem; /* 20.25px - increased */
-    width: 20px;
+    margin-right: 0.875rem; /* Increased margin */
+    font-size: 1.25rem; /* 25px - increased */
+    width: 24px; /* Increased width */
     text-align: center;
 }
 .nav-link:hover {
@@ -331,20 +325,20 @@
     box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.15);
 }
 .sidebar-footer {
-    padding-top: 1.5rem;
-    padding-bottom: 1rem;
+    padding-top: 1.75rem; /* Increased padding */
+    padding-bottom: 1.25rem; /* Increased padding */
     border-top: 1px solid rgba(255, 255, 255, 0.15);
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem; /* Increased margin */
 }
 .sidebar-avatar {
-    width: 40px;
-    height: 40px;
+    width: 48px; /* Increased size */
+    height: 48px; /* Increased size */
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.125rem; /* 20.25px - increased */
+    font-size: 1.375rem; /* 27.5px - increased */
 }
 .sidebar-footer .dropdown-toggle::after {
     display: none;

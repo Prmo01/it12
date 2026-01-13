@@ -24,11 +24,11 @@
                 <div class="row g-3">
                     <div class="col-md-5">
                         <label class="form-label-custom">
-                            <i class="bi bi-briefcase"></i> Project
+                            <i class="bi bi-briefcase"></i> Project <span class="text-danger" id="project-required-indicator">*</span>
                         </label>
-                        <select name="project_id" class="form-control-custom @error('project_id') is-invalid @enderror">
-                            <option value="">Select Project (Optional)</option>
-                            @foreach(\App\Models\Project::all() as $proj)
+                        <select name="project_id" class="form-control-custom @error('project_id') is-invalid @enderror" id="project-select">
+                            <option value="">Select Project</option>
+                            @foreach($projects as $proj)
                                 <option value="{{ $proj->id }}" {{ (request('project_id') == $proj->id || old('project_id') == $proj->id) ? 'selected' : '' }}>{{ $proj->name }}</option>
                             @endforeach
                         </select>
@@ -37,7 +37,7 @@
                                 <i class="bi bi-exclamation-circle"></i> {{ $message }}
                             </div>
                         @enderror
-                        <small class="form-help-text">Select a project if issuing for a specific project</small>
+                        <small class="form-help-text">Select the project for this material issuance</small>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label-custom">
@@ -82,15 +82,15 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label-custom">
-                            <i class="bi bi-file-earmark-text"></i> Purpose
+                            <i class="bi bi-file-earmark-text"></i> Purpose <span class="text-danger">*</span>
                         </label>
-                        <input type="text" name="purpose" class="form-control-custom @error('purpose') is-invalid @enderror" value="{{ old('purpose') }}" placeholder="Enter purpose of issuance">
+                        <input type="text" name="purpose" class="form-control-custom @error('purpose') is-invalid @enderror" value="{{ old('purpose') }}" placeholder="Enter purpose of issuance" required>
                         @error('purpose')
                             <div class="invalid-feedback-custom">
                                 <i class="bi bi-exclamation-circle"></i> {{ $message }}
                             </div>
                         @enderror
-                        <small class="form-help-text">Optional purpose or reason for issuance</small>
+                        <small class="form-help-text">Purpose or reason for issuance</small>
                     </div>
                 </div>
             </div>
@@ -657,6 +657,26 @@
             }
         }, 3000);
     });
+    
+    // Make project required when issuance_type is "project"
+    const issuanceTypeSelect = document.querySelector('select[name="issuance_type"]');
+    const projectSelect = document.getElementById('project-select');
+    const projectRequiredIndicator = document.getElementById('project-required-indicator');
+    
+    function updateProjectRequirement() {
+        if (issuanceTypeSelect.value === 'project') {
+            projectSelect.setAttribute('required', 'required');
+            projectRequiredIndicator.style.display = 'inline';
+        } else {
+            projectSelect.removeAttribute('required');
+            projectRequiredIndicator.style.display = 'none';
+        }
+    }
+    
+    if (issuanceTypeSelect) {
+        issuanceTypeSelect.addEventListener('change', updateProjectRequirement);
+        updateProjectRequirement(); // Set initial state
+    }
 </script>
 @endpush
 @endsection

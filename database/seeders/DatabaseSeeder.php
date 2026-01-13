@@ -211,18 +211,41 @@ class DatabaseSeeder extends Seeder
         // Create 20 Projects (only if PM exists)
         $projects = [];
         if ($pm) {
+            $uniqueProjectNames = [
+                'Davao Bayview Residential Tower',
+                'SM City Davao Expansion Project',
+                'Ateneo de Davao University New Wing',
+                'Davao International Airport Terminal 2',
+                'Pearl Farm Beach Resort Renovation',
+                'Abreeza Mall Commercial Complex',
+                'Davao Doctors Hospital Expansion',
+                'Davao City Waterfront Development',
+                'Matina Town Square Retail Center',
+                'Davao City Hall Annex Building',
+                'Philippine Eagle Center Renovation',
+                'Davao City Sports Complex',
+                'People\'s Park Modernization',
+                'Davao City Library & Museum',
+                'Davao Light & Power Substation',
+                'Davao City Fire Station Main',
+                'Davao City Police Headquarters',
+                'Davao City Waste Management Facility',
+                'Davao City Bus Terminal',
+                'Davao City Convention Center'
+            ];
+            
             $projectStatuses = ['planning', 'active', 'active', 'on_hold', 'active']; // More active projects
-            for ($i = 1; $i <= 20; $i++) {
-                $projectName = "Construction Project {$i}";
+            for ($i = 0; $i < 20; $i++) {
+                $projectName = $uniqueProjectNames[$i] ?? "Construction Project " . ($i + 1);
                 $status = $projectStatuses[$i % count($projectStatuses)];
                 
                 $project = Project::updateOrCreate(
                     [
-                        'project_code' => 'PRJ-' . str_pad($i, 6, '0', STR_PAD_LEFT),
+                        'project_code' => 'PRJ-' . str_pad($i + 1, 6, '0', STR_PAD_LEFT),
                     ],
                     [
                         'name' => $projectName,
-                        'description' => "Construction project for {$projectName} - Phase " . ($i % 3 + 1),
+                        'description' => "Construction and fabrication project for {$projectName} - Phase " . (($i % 3) + 1),
                         'project_manager_id' => $pm->id,
                         'start_date' => now()->subDays(rand(0, 60))->addDays($i * 5),
                         'end_date' => now()->addDays($i * 5 + rand(60, 180)),
@@ -238,15 +261,39 @@ class DatabaseSeeder extends Seeder
         // Create 15 Purchase Requests
         $purchaseRequests = [];
         if ($pm && $adminUser && count($projects) > 0) {
+            $prPurposes = [
+                'Window and door frame fabrication materials',
+                'Glass panel installation supplies',
+                'Aluminum profile cutting and assembly materials',
+                'Modular cabinet hardware and components',
+                'Structural aluminum framework materials',
+                'Glass and glazing system components',
+                'UPVC window and door system supplies',
+                'Interior finishing materials and hardware',
+                'Exterior facade aluminum cladding materials',
+                'Glass curtain wall system components',
+                'Cabinet door and drawer hardware',
+                'Aluminum railing and balustrade materials',
+                'Glass partition and divider supplies',
+                'Window hardware and accessories',
+                'Aluminum sheet and panel materials',
+                'Glass cutting and processing supplies',
+                'Cabinet frame and structure materials',
+                'Aluminum extrusion and fabrication supplies',
+                'Glass sealant and installation materials',
+                'Modular system assembly components'
+            ];
+            
             $prStatuses = ['draft', 'submitted', 'approved', 'approved', 'approved'];
             for ($i = 1; $i <= 15; $i++) {
                 $project = $projects[array_rand($projects)];
                 $status = $prStatuses[$i % count($prStatuses)];
+                $purpose = $prPurposes[($i - 1) % count($prPurposes)] . " for {$project->name}";
                 
                 $pr = PurchaseRequest::create([
                     'pr_number' => 'PR-' . str_pad($i, 6, '0', STR_PAD_LEFT),
                     'project_id' => $project->id,
-                    'purpose' => "Purchase request #{$i} for project materials",
+                    'purpose' => $purpose,
                     'status' => $status,
                     'requested_by' => $pm->id,
                     'approved_by' => ($status === 'approved') ? $adminUser->id : null,
@@ -279,6 +326,19 @@ class DatabaseSeeder extends Seeder
                 $supplier = $suppliers->random();
                 $status = $quotationStatuses[$i % count($quotationStatuses)];
                 
+                $quotationNotes = [
+                    'Quotation includes delivery to project site',
+                    'Bulk pricing applied for large quantity orders',
+                    'Price valid for 30 days from quotation date',
+                    'Includes standard packaging and handling',
+                    'Custom specifications as per project requirements',
+                    'Delivery schedule coordinated with project timeline',
+                    'Quality certification included with materials',
+                    'Warranty terms as per supplier standard policy',
+                    'Payment terms negotiable for approved projects',
+                    'Volume discount available for repeat orders'
+                ];
+                
                 $quotation = Quotation::create([
                     'quotation_number' => 'QT-' . str_pad($i, 6, '0', STR_PAD_LEFT),
                     'project_code' => $pr->project->project_code ?? 'PRJ-000001',
@@ -288,7 +348,7 @@ class DatabaseSeeder extends Seeder
                     'valid_until' => now()->addDays(rand(15, 45)),
                     'status' => $status,
                     'terms_conditions' => 'Standard payment terms: Net 30 days',
-                    'notes' => "Quotation {$i} for purchase request {$pr->pr_number}",
+                    'notes' => $quotationNotes[($i - 1) % count($quotationNotes)] . " - Project: {$pr->project->name}",
                 ]);
 
                 // Add items to quotation based on PR items

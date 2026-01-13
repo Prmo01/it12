@@ -9,13 +9,13 @@
         <p class="text-muted mb-0">{{ $purchaseOrder->po_number }}</p>
     </div>
     <div class="d-flex gap-2">
-        @if(in_array($purchaseOrder->status, ['draft', 'pending']))
-            <form method="POST" action="{{ route('purchase-orders.approve', $purchaseOrder) }}" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-success">
-                    <i class="bi bi-check-circle"></i> Approve
-                </button>
-            </form>
+        @if(auth()->user()->isAdmin() && in_array($purchaseOrder->status, ['draft', 'pending']))
+        <form method="POST" action="{{ route('purchase-orders.approve', $purchaseOrder) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to approve this purchase order?');">
+            @csrf
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-check-circle"></i> Approve
+            </button>
+        </form>
         @endif
         <a href="{{ route('purchase-orders.print', $purchaseOrder) }}" class="btn btn-secondary">
             <i class="bi bi-printer"></i> Print
@@ -73,7 +73,7 @@
                     <div class="info-item">
                         <span class="info-label">Status</span>
                         <span class="info-value">
-                            <span class="status-text status-text-{{ $purchaseOrder->status === 'approved' ? 'success' : ($purchaseOrder->status === 'pending' ? 'primary' : ($purchaseOrder->status === 'completed' ? 'info' : 'warning')) }}">
+                            <span class="status-text status-text-{{ $purchaseOrder->status === 'approved' ? 'success' : ($purchaseOrder->status === 'pending' || $purchaseOrder->status === 'draft' ? 'primary' : ($purchaseOrder->status === 'completed' ? 'info' : 'warning')) }}">
                                 {{ ucfirst($purchaseOrder->status) }}
                             </span>
                         </span>

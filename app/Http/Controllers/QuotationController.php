@@ -22,15 +22,29 @@ class QuotationController extends Controller
     {
         $query = Quotation::with(['purchaseRequest', 'items.supplier']);
 
-        if ($request->has('purchase_request_id')) {
+        if ($request->has('purchase_request_id') && $request->purchase_request_id != '') {
             $query->where('purchase_request_id', $request->purchase_request_id);
         }
 
-        if ($request->has('status')) {
+        if ($request->has('status') && $request->status != '') {
             $query->where('status', $request->status);
         }
 
-        $quotations = $query->latest()->paginate(15);
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('quotation_number', 'like', "%{$search}%")
+                  ->orWhere('project_code', 'like', "%{$search}%")
+                  ->orWhereHas('purchaseRequest', function($q) use ($search) {
+                      $q->where('pr_number', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('items.supplier', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $quotations = $query->latest()->paginate(15)->withQueryString();
 
         return view('quotations.index', compact('quotations'));
     }
@@ -41,8 +55,26 @@ class QuotationController extends Controller
         if ($request->has('purchase_request_id')) {
             $purchaseRequest = PurchaseRequest::with('items.inventoryItem')->findOrFail($request->purchase_request_id);
         }
+        
+        // Get available purchase requests for dropdown
+        // Include both 'approved' and 'submitted' statuses, and exclude those that already have quotations
+        $purchaseRequestsQuery = PurchaseRequest::whereIn('status', ['approved', 'submitted'])
+            ->whereDoesntHave('quotations', function($q) {
+                $q->whereNotIn('status', ['rejected', 'cancelled']);
+            })
+            ->with('project');
+        
+        // Filter for project managers - show only their projects
+        if (auth()->user()->hasRole('project_manager')) {
+            $purchaseRequestsQuery->whereHas('project', function($q) {
+                $q->where('project_manager_id', auth()->id());
+            });
+        }
+        
+        $purchaseRequests = $purchaseRequestsQuery->orderBy('pr_number', 'desc')->get();
+        
         $suppliers = Supplier::where('status', 'active')->get();
-        return view('quotations.create', compact('purchaseRequest', 'suppliers'));
+        return view('quotations.create', compact('purchaseRequest', 'purchaseRequests', 'suppliers'));
     }
 
     public function store(Request $request)

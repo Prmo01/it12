@@ -50,23 +50,34 @@ class MaterialIssuanceController extends Controller
             $project = Project::findOrFail($request->project_id);
         }
 
-        return view('material_issuance.create', compact('project'));
+        // Get projects for dropdown - filter for project managers
+        $projectsQuery = Project::query();
+        if (auth()->user()->hasRole('project_manager')) {
+            $projectsQuery->where('project_manager_id', auth()->id());
+        }
+        $projects = $projectsQuery->orderBy('name')->get();
+
+        return view('material_issuance.create', compact('project', 'projects'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'project_id' => 'nullable|exists:projects,id',
+            'project_id' => 'required_if:issuance_type,project|nullable|exists:projects,id',
             'work_order_number' => 'nullable|string|max:255',
             'issuance_type' => 'required|in:project,maintenance,general,repair,other',
             'issuance_date' => 'required|date',
-            'purpose' => 'nullable|string',
+            'purpose' => 'required|string|min:10',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.inventory_item_id' => 'required|exists:inventory_items,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_cost' => 'nullable|numeric|min:0',
             'items.*.notes' => 'nullable|string',
+        ], [
+            'project_id.required_if' => 'Project is required when issuance type is "Project".',
+            'purpose.required' => 'Please provide a purpose for this material issuance.',
+            'purpose.min' => 'Purpose must be at least 10 characters.',
         ]);
         
         // Check for duplicate inventory_item_id values

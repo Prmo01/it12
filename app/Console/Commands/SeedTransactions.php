@@ -11,6 +11,8 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\GoodsReceipt;
 use App\Models\GoodsReceiptItem;
+use App\Models\GoodsReturn;
+use App\Models\GoodsReturnItem;
 use App\Models\MaterialIssuance;
 use App\Models\MaterialIssuanceItem;
 use App\Models\ChangeOrder;
@@ -24,8 +26,17 @@ use Carbon\Carbon;
 
 class SeedTransactions extends Command
 {
-    protected $signature = 'transactions:seed {--per-project=20 : Minimum transactions per project}';
-    protected $description = 'Create transactions for existing projects (at least 20 per project) spread across different months';
+    protected $signature = 'transactions:seed {--total=80 : Total number of transactions to create}';
+    protected $description = 'Create 80 linked transactions across all modules following the system flow';
+
+    protected $prsCreated = 0;
+    protected $quotationsCreated = 0;
+    protected $posCreated = 0;
+    protected $grsCreated = 0;
+    protected $goodsReturnsCreated = 0;
+    protected $issuancesCreated = 0;
+    protected $changeOrdersCreated = 0;
+    protected $completedProjectsCreated = 0;
 
     /**
      * Get the next unique number for a given prefix and table
@@ -39,7 +50,6 @@ class SeedTransactions extends Command
         $lastNumber = $lastRecord ? (int) substr($lastRecord->{$numberColumn}, strlen($prefix) + 1) : 0;
         $nextNumber = $lastNumber + 1;
         
-        // Ensure uniqueness by checking if it exists and incrementing
         while (\DB::table($table)->where($numberColumn, $prefix . '-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT))->exists()) {
             $nextNumber++;
         }
@@ -49,14 +59,15 @@ class SeedTransactions extends Command
 
     public function handle()
     {
-        $transactionsPerProject = (int) $this->option('per-project');
-        $this->info("Creating at least {$transactionsPerProject} transactions per existing project...");
+        $targetTotal = (int) $this->option('total');
+        $this->info("Creating {$targetTotal} linked transactions across all modules...");
 
         // Get users
         $adminUser = User::whereHas('role', fn($q) => $q->where('slug', 'admin'))->first();
         $pm = User::whereHas('role', fn($q) => $q->where('slug', 'project_manager'))->first();
         $purchasingUser = User::whereHas('role', fn($q) => $q->where('slug', 'purchasing'))->first();
         $inventoryManager = User::whereHas('role', fn($q) => $q->where('slug', 'inventory_manager'))->first();
+        $warehouseManager = User::whereHas('role', fn($q) => $q->where('slug', 'warehouse_manager'))->first() ?? $inventoryManager;
 
         if (!$adminUser || !$pm || !$purchasingUser || !$inventoryManager) {
             $this->error("Required users not found. Please run: php artisan db:seed");
@@ -71,75 +82,79 @@ class SeedTransactions extends Command
             return 1;
         }
 
-        $projectNames = [
-            'Residential Tower A', 'Commercial Complex B', 'Office Building C', 'Mixed-Use Development D',
-            'Hotel & Resort E', 'Shopping Mall F', 'Apartment Complex G', 'Warehouse Facility H',
-            'Industrial Plant I', 'Hospital Wing J', 'School Campus K', 'Bridge Project L',
-            'Highway Extension M', 'Park Renovation N', 'Stadium O', 'Convention Center P',
-            'Luxury Condominium Q', 'Townhouse Project R', 'Villa Development S', 'Retail Strip T',
-            'Data Center U', 'Manufacturing Hub V', 'Logistics Center W', 'Distribution Hub X',
-            'Business Park Y', 'Tech Campus Z', 'Innovation Center AA', 'Research Facility AB',
-            'Healthcare Complex AC', 'Senior Living AD', 'Student Housing AE', 'Sports Complex AF',
-            'Entertainment Venue AG', 'Cultural Center AH', 'Museum Expansion AI', 'Library Project AJ',
-            'Government Building AK', 'Courthouse AL', 'Police Station AM', 'Fire Station AN',
-            'Water Treatment AO', 'Power Plant AP', 'Solar Farm AQ', 'Wind Farm AR',
-            'Telecom Tower AS', 'Fiber Network AT', 'Smart City AU', 'Sustainable Community AV',
-            'Green Building AW', 'LEED Project AX', 'Eco Village AY', 'Conservation Site AZ',
-            'Heritage Restoration BA', 'Historic Renovation BB', 'Modern Retrofit BC', 'Facade Upgrade BD'
-        ];
+        // Get existing projects or create new ones if needed
+        $existingProjects = Project::all();
+        
+        if ($existingProjects->isEmpty()) {
+            $this->error("No projects found. Please run: php artisan db:seed first to create projects.");
+            return 1;
+        }
 
-        // Generate dates across last 6 months (ensuring distribution)
+        // Generate dates across last 6 months
         $months = [];
         for ($i = 5; $i >= 0; $i--) {
             $months[] = now()->subMonths($i)->format('Y-m');
         }
-        
+
         $this->info("Distributing transactions across months: " . implode(', ', $months));
+        $this->info("Found {$existingProjects->count()} existing projects.");
 
-        $prsCreated = 0;
-        $quotationsCreated = 0;
-        $posCreated = 0;
-        $grsCreated = 0;
-        $issuancesCreated = 0;
-        $changeOrdersCreated = 0;
+        // Track created transactions for linking
+        $createdGRs = [];
+        $createdPOs = [];
+        $createdProjects = [];
 
-
-        // Get all existing projects
-        $existingProjects = Project::orderBy('created_at')->get();
-        
-        if ($existingProjects->isEmpty()) {
-            $this->error("No existing projects found. Please create projects first.");
-            return 1;
-        }
-
-        $this->info("Found {$existingProjects->count()} existing projects. Creating transactions for each...");
-
-        // Process each existing project
+        // Process each project to create linked transactions
         foreach ($existingProjects as $projectIndex => $project) {
+            if ($this->getTotalTransactions() >= $targetTotal) {
+                break;
+            }
+
             $this->info("Processing project: {$project->name} ({$project->project_code})...");
             
-            // Get project creation month for date distribution
-            $projectMonth = Carbon::parse($project->created_at)->format('Y-m');
-            $projectCreatedDate = Carbon::parse($project->created_at);
+            // Mark some projects as completed (about 20% of projects)
+            if ($projectIndex % 5 === 0 && $project->status !== 'completed') {
+                $project->update([
+                    'status' => 'completed',
+                    'progress_percentage' => 100,
+                ]);
+                $this->completedProjectsCreated++;
+                $this->info("  ✓ Marked project as completed");
+            }
 
-            // Create Purchase Requests for this project (at least 3-5 per project to reach 20+ transactions)
-            $prCount = max(3, rand(3, 5));
-            for ($prIdx = 0; $prIdx < $prCount; $prIdx++) {
-                // Distribute PR dates across months starting from project creation
+            // Create Purchase Requests (3-5 per project)
+            $prCount = min(5, max(3, (int) (($targetTotal - $this->getTotalTransactions()) / ($existingProjects->count() - $projectIndex + 1))));
+            $prCount = min($prCount, 5);
+            
+            for ($prIdx = 0; $prIdx < $prCount && $this->getTotalTransactions() < $targetTotal; $prIdx++) {
                 $monthOffset = $prIdx % count($months);
                 $targetMonth = $months[$monthOffset];
                 $daysInMonth = Carbon::parse($targetMonth . '-01')->daysInMonth;
                 $randomDay = rand(1, $daysInMonth);
                 $prDate = Carbon::parse($targetMonth . '-' . str_pad($randomDay, 2, '0', STR_PAD_LEFT));
                 
-                // More approved PRs to generate more transactions
                 $prStatuses = ['approved', 'approved', 'approved', 'submitted', 'draft'];
                 $prStatus = $prStatuses[$prIdx % count($prStatuses)];
+                
+                $prPurposes = [
+                    'Window and door fabrication materials',
+                    'Glass panel installation supplies',
+                    'Aluminum framework structural components',
+                    'Modular cabinet system hardware',
+                    'Curtain wall glazing materials',
+                    'Interior partition and divider supplies',
+                    'Exterior facade cladding materials',
+                    'UPVC window system components',
+                    'Cabinet door and drawer mechanisms',
+                    'Aluminum railing and balustrade supplies',
+                ];
+                
+                $purpose = $prPurposes[$prIdx % count($prPurposes)] . " for {$project->name}";
                 
                 $pr = PurchaseRequest::create([
                     'pr_number' => $this->getNextUniqueNumber('PR', 'purchase_requests', 'pr_number'),
                     'project_id' => $project->id,
-                    'purpose' => "Material requisition for {$project->name} - Phase " . ($prIdx + 1),
+                    'purpose' => $purpose,
                     'status' => $prStatus,
                     'requested_by' => $pm->id,
                     'approved_by' => ($prStatus === 'approved') ? $adminUser->id : null,
@@ -149,30 +164,32 @@ class SeedTransactions extends Command
                 ]);
 
                 // Add items to PR
-                $itemCount = rand(3, 8);
+                $itemCount = rand(3, 6);
                 $selectedItems = $inventoryItems->random(min($itemCount, $inventoryItems->count()));
                 foreach ($selectedItems as $item) {
                     PurchaseRequestItem::create([
                         'purchase_request_id' => $pr->id,
                         'inventory_item_id' => $item->id,
-                        'quantity' => rand(20, 500),
+                        'quantity' => rand(20, 300),
                         'unit_cost' => rand(50, 5000) / 100,
                         'specifications' => "Standard specifications for {$item->name}",
                     ]);
                 }
                 
-                $transactions[] = ['type' => 'pr', 'id' => $pr->id, 'date' => $prDate];
-                $prsCreated++;
+                $this->prsCreated++;
+                $this->info("  ✓ Created PR: {$pr->pr_number}");
 
-                // Create Quotations for approved PRs
-                if ($prStatus === 'approved') {
-                    $quoteCount = rand(2, 4); // 2-4 quotations per PR
-                    for ($qIdx = 0; $qIdx < $quoteCount; $qIdx++) {
+                // Create Quotations for approved PRs (2-3 per PR)
+                if ($prStatus === 'approved' && $this->getTotalTransactions() < $targetTotal) {
+                    $quoteCount = rand(2, 3);
+                    $acceptedQuotation = null;
+                    
+                    for ($qIdx = 0; $qIdx < $quoteCount && $this->getTotalTransactions() < $targetTotal; $qIdx++) {
                         $quoteDate = $prDate->copy()->addDays(rand(1, 10));
                         $supplier = $suppliers->random();
                         
-                        // Ensure at least one accepted quotation per PR
-                        $quoteStatuses = ['accepted', 'accepted', 'pending', 'rejected'];
+                        // Ensure at least one accepted quotation
+                        $quoteStatuses = ['accepted', 'pending', 'rejected'];
                         $quoteStatus = ($qIdx === 0) ? 'accepted' : ($quoteStatuses[$qIdx % count($quoteStatuses)]);
                         
                         $quotation = Quotation::create([
@@ -184,7 +201,7 @@ class SeedTransactions extends Command
                             'valid_until' => $quoteDate->copy()->addDays(rand(30, 60)),
                             'status' => $quoteStatus,
                             'terms_conditions' => 'Standard payment terms: Net 30 days',
-                            'notes' => "Quotation from {$supplier->name} for PR {$pr->pr_number}",
+                            'notes' => "Quotation from {$supplier->name} for {$project->name}",
                             'created_at' => $quoteDate,
                             'updated_at' => $quoteDate,
                         ]);
@@ -192,7 +209,7 @@ class SeedTransactions extends Command
                         // Add items to quotation
                         $totalAmount = 0;
                         foreach ($pr->items as $prItem) {
-                            $priceVariation = 0.8 + (rand(0, 40) / 100); // 80% to 120% of PR price
+                            $priceVariation = 0.85 + (rand(0, 30) / 100); // 85% to 115% of PR price
                             $unitPrice = $prItem->unit_cost * $priceVariation;
                             $totalPrice = $unitPrice * $prItem->quantity;
                             $totalAmount += $totalPrice;
@@ -209,140 +226,196 @@ class SeedTransactions extends Command
                         }
                         
                         $quotation->update(['total_amount' => round($totalAmount, 2)]);
-                        $transactions[] = ['type' => 'quotation', 'id' => $quotation->id, 'date' => $quoteDate];
-                        $quotationsCreated++;
-
-                        // Create Purchase Order from accepted quotation (always create PO for accepted quotes)
+                        $this->quotationsCreated++;
+                        $this->info("    ✓ Created Quotation: {$quotation->quotation_number}");
+                        
                         if ($quoteStatus === 'accepted') {
-                            $poDate = $quoteDate->copy()->addDays(rand(2, 7));
-                            $poStatuses = ['draft', 'pending', 'approved', 'approved', 'completed'];
-                            $poStatus = $poStatuses[rand(0, count($poStatuses) - 1)];
+                            $acceptedQuotation = $quotation;
+                        }
+                    }
+
+                    // Create Purchase Order from accepted quotation
+                    if ($acceptedQuotation && $this->getTotalTransactions() < $targetTotal) {
+                        $poDate = $acceptedQuotation->quotation_date->copy()->addDays(rand(2, 7));
+                        $poStatuses = ['draft', 'pending', 'approved', 'approved', 'completed'];
+                        $poStatus = $poStatuses[rand(0, count($poStatuses) - 1)];
+                        
+                        $po = PurchaseOrder::create([
+                            'po_number' => $this->getNextUniqueNumber('PO', 'purchase_orders', 'po_number'),
+                            'project_code' => $project->project_code,
+                            'purchase_request_id' => $pr->id,
+                            'quotation_id' => $acceptedQuotation->id,
+                            'supplier_id' => $acceptedQuotation->supplier_id,
+                            'po_date' => $poDate,
+                            'expected_delivery_date' => $poDate->copy()->addDays(rand(14, 45)),
+                            'status' => $poStatus,
+                            'delivery_address' => 'Main Warehouse, 123 Industrial St., Davao City',
+                            'terms_conditions' => 'Standard delivery terms apply',
+                            'created_by' => $purchasingUser->id,
+                            'approved_by' => ($poStatus === 'approved' || $poStatus === 'completed') ? $adminUser->id : null,
+                            'approved_at' => ($poStatus === 'approved' || $poStatus === 'completed') ? $poDate->copy()->addDays(rand(1, 3)) : null,
+                            'created_at' => $poDate,
+                            'updated_at' => $poDate,
+                        ]);
+
+                        // Add items to PO
+                        $subtotal = 0;
+                        foreach ($acceptedQuotation->items as $qItem) {
+                            PurchaseOrderItem::create([
+                                'purchase_order_id' => $po->id,
+                                'inventory_item_id' => $qItem->inventory_item_id,
+                                'supplier_id' => $qItem->supplier_id,
+                                'quantity' => $qItem->quantity,
+                                'unit_price' => $qItem->unit_price,
+                                'total_price' => $qItem->total_price,
+                                'specifications' => $qItem->specifications,
+                            ]);
+                            $subtotal += $qItem->total_price;
+                        }
+                        
+                        $taxAmount = $subtotal * 0.12;
+                        $po->update([
+                            'subtotal' => round($subtotal, 2),
+                            'tax_amount' => round($taxAmount, 2),
+                            'total_amount' => round($subtotal + $taxAmount, 2),
+                        ]);
+                        
+                        $createdPOs[] = $po;
+                        $this->posCreated++;
+                        $this->info("    ✓ Created PO: {$po->po_number}");
+
+                        // Create Goods Receipt for approved/completed POs
+                        if (($poStatus === 'approved' || $poStatus === 'completed') && $this->getTotalTransactions() < $targetTotal) {
+                            $grDate = $po->expected_delivery_date->copy()->subDays(rand(-5, 10));
+                            $grStatuses = ['draft', 'pending', 'approved', 'approved'];
+                            $grStatus = $grStatuses[rand(0, count($grStatuses) - 1)];
                             
-                            $po = PurchaseOrder::create([
-                                'po_number' => $this->getNextUniqueNumber('PO', 'purchase_orders', 'po_number'),
+                            $gr = GoodsReceipt::create([
+                                'gr_number' => $this->getNextUniqueNumber('GR', 'goods_receipts', 'gr_number'),
                                 'project_code' => $project->project_code,
-                                'purchase_request_id' => $pr->id,
-                                'quotation_id' => $quotation->id,
-                                'supplier_id' => $supplier->id,
-                                'po_date' => $poDate,
-                                'expected_delivery_date' => $poDate->copy()->addDays(rand(14, 45)),
-                                'status' => $poStatus,
-                                'delivery_address' => 'Main Warehouse, 123 Industrial St., Davao City',
-                                'terms_conditions' => 'Standard delivery terms apply',
-                                'created_by' => $purchasingUser->id,
-                                'approved_by' => ($poStatus === 'approved' || $poStatus === 'completed') ? $adminUser->id : null,
-                                'approved_at' => ($poStatus === 'approved' || $poStatus === 'completed') ? $poDate->copy()->addDays(rand(1, 3)) : null,
-                                'created_at' => $poDate,
-                                'updated_at' => $poDate,
+                                'purchase_order_id' => $po->id,
+                                'gr_date' => $grDate,
+                                'status' => $grStatus,
+                                'delivery_note_number' => 'DN-' . strtoupper(Str::random(8)),
+                                'remarks' => "Goods received for {$project->name}",
+                                'received_by' => $warehouseManager->id,
+                                'approved_by' => ($grStatus === 'approved') ? $warehouseManager->id : null,
+                                'approved_at' => ($grStatus === 'approved') ? $grDate->copy()->addDays(rand(1, 2)) : null,
+                                'created_at' => $grDate,
+                                'updated_at' => $grDate,
                             ]);
 
-                            // Add items to PO
-                            $subtotal = 0;
-                            foreach ($quotation->items as $qItem) {
-                                PurchaseOrderItem::create([
-                                    'purchase_order_id' => $po->id,
-                                    'inventory_item_id' => $qItem->inventory_item_id,
-                                    'supplier_id' => $qItem->supplier_id,
-                                    'quantity' => $qItem->quantity,
-                                    'unit_price' => $qItem->unit_price,
-                                    'total_price' => $qItem->total_price,
-                                    'specifications' => $qItem->specifications,
+                            // Add items to Goods Receipt
+                            foreach ($po->items as $poItem) {
+                                $qtyReceived = $poItem->quantity;
+                                $qtyAccepted = (int) ($qtyReceived * (0.90 + (rand(0, 10) / 100))); // 90-100% acceptance
+                                $qtyRejected = $qtyReceived - $qtyAccepted;
+                                
+                                GoodsReceiptItem::create([
+                                    'goods_receipt_id' => $gr->id,
+                                    'purchase_order_item_id' => $poItem->id,
+                                    'inventory_item_id' => $poItem->inventory_item_id,
+                                    'quantity_ordered' => $poItem->quantity,
+                                    'quantity_received' => $qtyReceived,
+                                    'quantity_accepted' => $qtyAccepted,
+                                    'quantity_rejected' => $qtyRejected,
+                                    'rejection_reason' => $qtyRejected > 0 ? 'Minor defects or damage' : null,
                                 ]);
-                                $subtotal += $qItem->total_price;
+
+                                // Create stock movement if approved
+                                if ($grStatus === 'approved') {
+                                    $latestMovement = StockMovement::where('inventory_item_id', $poItem->inventory_item_id)
+                                        ->orderBy('created_at', 'desc')
+                                        ->first();
+                                    $currentStock = $latestMovement ? (float) $latestMovement->balance_after : 0;
+                                    $balanceAfter = $currentStock + $qtyAccepted;
+
+                                    StockMovement::create([
+                                        'inventory_item_id' => $poItem->inventory_item_id,
+                                        'movement_type' => 'stock_in',
+                                        'reference_type' => 'App\Models\GoodsReceipt',
+                                        'reference_id' => $gr->id,
+                                        'quantity' => $qtyAccepted,
+                                        'unit_cost' => $poItem->unit_price,
+                                        'balance_after' => $balanceAfter,
+                                        'notes' => "Stock in from GR {$gr->gr_number} for {$project->name}",
+                                        'created_by' => $warehouseManager->id,
+                                        'created_at' => $gr->approved_at ?? $grDate,
+                                        'updated_at' => $gr->approved_at ?? $grDate,
+                                    ]);
+                                }
                             }
                             
-                            $taxAmount = $subtotal * 0.12;
-                            $po->update([
-                                'subtotal' => round($subtotal, 2),
-                                'tax_amount' => round($taxAmount, 2),
-                                'total_amount' => round($subtotal + $taxAmount, 2),
-                            ]);
-                            
-                            $transactions[] = ['type' => 'po', 'id' => $po->id, 'date' => $poDate];
-                            $posCreated++;
+                            $createdGRs[] = $gr;
+                            $this->grsCreated++;
+                            $this->info("      ✓ Created GR: {$gr->gr_number}");
 
-                            // Create Goods Receipt for approved/completed POs (create GR for most approved POs)
-                            if (($poStatus === 'approved' || $poStatus === 'completed')) {
-                                $grDate = $po->expected_delivery_date->copy()->subDays(rand(-5, 10));
-                                $grStatuses = ['draft', 'pending', 'approved', 'approved'];
-                                $grStatus = $grStatuses[rand(0, count($grStatuses) - 1)];
+                            // Create Goods Return for some approved GRs (about 30% of GRs)
+                            if ($grStatus === 'approved' && rand(1, 100) <= 30 && $this->getTotalTransactions() < $targetTotal) {
+                                $returnDate = $gr->approved_at->copy()->addDays(rand(1, 7));
+                                $returnStatuses = ['pending', 'approved', 'approved'];
+                                $returnStatus = $returnStatuses[rand(0, count($returnStatuses) - 1)];
                                 
-                                $gr = GoodsReceipt::create([
-                                    'gr_number' => $this->getNextUniqueNumber('GR', 'goods_receipts', 'gr_number'),
+                                $goodsReturn = GoodsReturn::create([
+                                    'return_number' => $this->getNextUniqueNumber('RT', 'goods_returns', 'return_number'),
                                     'project_code' => $project->project_code,
-                                    'purchase_order_id' => $po->id,
-                                    'gr_date' => $grDate,
-                                    'status' => $grStatus,
-                                    'delivery_note_number' => 'DN-' . strtoupper(Str::random(8)),
-                                    'remarks' => "Goods received for {$project->name}",
-                                    'received_by' => $inventoryManager->id,
-                                    'approved_by' => ($grStatus === 'approved') ? $inventoryManager->id : null,
-                                    'approved_at' => ($grStatus === 'approved') ? $grDate->copy()->addDays(rand(1, 2)) : null,
-                                    'created_at' => $grDate,
-                                    'updated_at' => $grDate,
+                                    'goods_receipt_id' => $gr->id,
+                                    'return_date' => $returnDate,
+                                    'status' => $returnStatus,
+                                    'reason' => 'Defective items or quality issues',
+                                    'returned_by' => $warehouseManager->id,
+                                    'approved_by' => ($returnStatus === 'approved') ? $adminUser->id : null,
+                                    'approved_at' => ($returnStatus === 'approved') ? $returnDate->copy()->addDays(rand(1, 3)) : null,
+                                    'notes' => "Returning defective items from GR {$gr->gr_number} for {$project->name}",
+                                    'created_at' => $returnDate,
+                                    'updated_at' => $returnDate,
                                 ]);
 
-                                // Add items to Goods Receipt
-                                foreach ($po->items as $poItem) {
-                                    $qtyReceived = $poItem->quantity;
-                                    $qtyAccepted = (int) ($qtyReceived * (0.85 + (rand(0, 15) / 100))); // 85-100% acceptance
-                                    $qtyRejected = $qtyReceived - $qtyAccepted;
-                                    
-                                    GoodsReceiptItem::create([
-                                        'goods_receipt_id' => $gr->id,
-                                        'purchase_order_item_id' => $poItem->id,
-                                        'inventory_item_id' => $poItem->inventory_item_id,
-                                        'quantity_ordered' => $poItem->quantity,
-                                        'quantity_received' => $qtyReceived,
-                                        'quantity_accepted' => $qtyAccepted,
-                                        'quantity_rejected' => $qtyRejected,
-                                        'rejection_reason' => $qtyRejected > 0 ? 'Minor defects' : null,
-                                    ]);
-
-                                    // Create stock movement if approved
-                                    if ($grStatus === 'approved') {
-                                        $latestMovement = StockMovement::where('inventory_item_id', $poItem->inventory_item_id)
-                                            ->orderBy('created_at', 'desc')
-                                            ->first();
-                                        $currentStock = $latestMovement ? (float) $latestMovement->balance_after : 0;
-                                        $balanceAfter = $currentStock + $qtyAccepted;
-
-                                        StockMovement::create([
-                                            'inventory_item_id' => $poItem->inventory_item_id,
-                                            'movement_type' => 'stock_in',
-                                            'reference_type' => 'App\Models\GoodsReceipt',
-                                            'reference_id' => $gr->id,
-                                            'quantity' => $qtyAccepted,
-                                            'unit_cost' => $poItem->unit_price,
-                                            'balance_after' => $balanceAfter,
-                                            'notes' => "Stock in from GR {$gr->gr_number}",
-                                            'created_by' => $inventoryManager->id,
-                                            'created_at' => $gr->approved_at ?? $grDate,
-                                            'updated_at' => $gr->approved_at ?? $grDate,
+                                // Add items to Goods Return (return some rejected items)
+                                $returnedItems = 0;
+                                foreach ($gr->items as $grItem) {
+                                    if ($grItem->quantity_rejected > 0 && $returnedItems < 2) {
+                                        GoodsReturnItem::create([
+                                            'goods_return_id' => $goodsReturn->id,
+                                            'goods_receipt_item_id' => $grItem->id,
+                                            'inventory_item_id' => $grItem->inventory_item_id,
+                                            'quantity' => $grItem->quantity_rejected,
+                                            'reason' => $grItem->rejection_reason ?? 'Defective',
                                         ]);
+                                        $returnedItems++;
                                     }
                                 }
                                 
-                                $transactions[] = ['type' => 'gr', 'id' => $gr->id, 'date' => $grDate];
-                                $grsCreated++;
+                                $this->goodsReturnsCreated++;
+                                $this->info("        ✓ Created Goods Return: {$goodsReturn->return_number}");
                             }
                         }
                     }
                 }
             }
 
-            // Create Material Issuances for active projects (at least 2-3 per active project)
-            if ($project->status === 'active' || $project->status === 'planning') {
-                $issuanceCount = max(2, rand(2, 4));
-                for ($issIdx = 0; $issIdx < $issuanceCount; $issIdx++) {
-                    // Distribute issuances across months
-                    $monthOffset = ($issIdx + 1) % count($months);
+            // Create Material Issuances for active/planning projects (2-3 per project)
+            if (($project->status === 'active' || $project->status === 'planning') && $this->getTotalTransactions() < $targetTotal) {
+                $issuanceCount = rand(2, 3);
+                for ($issIdx = 0; $issIdx < $issuanceCount && $this->getTotalTransactions() < $targetTotal; $issIdx++) {
+                    $monthOffset = ($issIdx + 2) % count($months);
                     $targetMonth = $months[$monthOffset];
                     $daysInMonth = Carbon::parse($targetMonth . '-01')->daysInMonth;
                     $randomDay = rand(1, $daysInMonth);
                     $issDate = Carbon::parse($targetMonth . '-' . str_pad($randomDay, 2, '0', STR_PAD_LEFT));
                     $issStatuses = ['draft', 'approved', 'issued', 'completed'];
                     $issStatus = $issStatuses[rand(0, count($issStatuses) - 1)];
+                    
+                    $issuancePurposes = [
+                        'Window and door installation',
+                        'Glass panel fabrication',
+                        'Aluminum framework assembly',
+                        'Modular cabinet installation',
+                        'Curtain wall glazing',
+                        'Interior partition work',
+                        'Exterior facade installation',
+                        'UPVC system assembly'
+                    ];
                     
                     $issuance = MaterialIssuance::create([
                         'issuance_number' => $this->getNextUniqueNumber('MI', 'material_issuances', 'issuance_number'),
@@ -351,19 +424,19 @@ class SeedTransactions extends Command
                         'issuance_type' => 'project',
                         'issuance_date' => $issDate,
                         'status' => $issStatus,
-                        'purpose' => "Material issuance for {$project->name} - Phase " . ($issIdx + 1),
+                        'purpose' => $issuancePurposes[$issIdx % count($issuancePurposes)] . " for {$project->name}",
                         'requested_by' => $pm->id,
                         'approved_by' => ($issStatus === 'approved' || $issStatus === 'issued' || $issStatus === 'completed') ? $inventoryManager->id : null,
                         'issued_by' => ($issStatus === 'issued' || $issStatus === 'completed') ? $inventoryManager->id : null,
                         'approved_at' => ($issStatus === 'approved' || $issStatus === 'issued' || $issStatus === 'completed') ? $issDate->copy()->addDays(rand(1, 3)) : null,
                         'issued_at' => ($issStatus === 'issued' || $issStatus === 'completed') ? ($issDate->copy()->addDays(rand(2, 5))) : null,
-                        'notes' => "Materials for construction work",
+                        'notes' => "Material issuance for {$project->name}",
                         'created_at' => $issDate,
                         'updated_at' => $issDate,
                     ]);
 
                     // Add items to Material Issuance
-                    $selectedItems = $inventoryItems->random(min(rand(3, 6), $inventoryItems->count()));
+                    $selectedItems = $inventoryItems->random(min(rand(3, 5), $inventoryItems->count()));
                     foreach ($selectedItems as $item) {
                         $latestMovement = StockMovement::where('inventory_item_id', $item->id)
                             ->orderBy('created_at', 'desc')
@@ -371,18 +444,18 @@ class SeedTransactions extends Command
                         $currentStock = $latestMovement ? (float) $latestMovement->balance_after : 0;
                         
                         if ($currentStock > 0) {
-                            $qtyToIssue = min(rand(10, 100), (int) ($currentStock * 0.5)); // Issue up to 50% of stock
+                            $qtyToIssue = min(rand(10, 80), (int) ($currentStock * 0.4)); // Issue up to 40% of stock
                             
                             MaterialIssuanceItem::create([
                                 'material_issuance_id' => $issuance->id,
                                 'inventory_item_id' => $item->id,
                                 'quantity' => $qtyToIssue,
                                 'unit_cost' => $item->unit_cost ?? 0,
-                                'notes' => "Issued for project use",
+                                'notes' => "Issued for {$project->name}",
                             ]);
 
                             // Create stock movement if issued
-                            if ($issStatus === 'issued') {
+                            if ($issStatus === 'issued' || $issStatus === 'completed') {
                                 $balanceAfter = max(0, $currentStock - $qtyToIssue);
                                 StockMovement::create([
                                     'inventory_item_id' => $item->id,
@@ -392,7 +465,7 @@ class SeedTransactions extends Command
                                     'quantity' => $qtyToIssue,
                                     'unit_cost' => $item->unit_cost ?? 0,
                                     'balance_after' => $balanceAfter,
-                                    'notes' => "Stock out from Material Issuance {$issuance->issuance_number}",
+                                    'notes' => "Stock out from Material Issuance {$issuance->issuance_number} for {$project->name}",
                                     'created_by' => $inventoryManager->id,
                                     'created_at' => $issuance->issued_at ?? $issDate,
                                     'updated_at' => $issuance->issued_at ?? $issDate,
@@ -401,13 +474,13 @@ class SeedTransactions extends Command
                         }
                     }
                     
-                    $transactions[] = ['type' => 'issuance', 'id' => $issuance->id, 'date' => $issDate];
-                    $issuancesCreated++;
+                    $this->issuancesCreated++;
+                    $this->info("  ✓ Created Material Issuance: {$issuance->issuance_number}");
                 }
             }
 
-            // Create Change Orders for some projects (at least 1 per 3 projects)
-            if (($projectIndex % 3 === 0) || rand(1, 100) <= 40) {
+            // Create Change Orders for some projects (about 1 per 4 projects)
+            if (($projectIndex % 4 === 0 || rand(1, 100) <= 25) && $this->getTotalTransactions() < $targetTotal) {
                 $monthOffset = rand(0, count($months) - 1);
                 $targetMonth = $months[$monthOffset];
                 $daysInMonth = Carbon::parse($targetMonth . '-01')->daysInMonth;
@@ -419,41 +492,47 @@ class SeedTransactions extends Command
                 $changeOrder = ChangeOrder::create([
                     'project_id' => $project->id,
                     'change_order_number' => $this->getNextUniqueNumber('CO', 'change_orders', 'change_order_number'),
-                    'description' => "Change order for {$project->name} - Scope modification",
-                    'reason' => "Client requested changes in design specifications",
+                    'description' => "Change order for {$project->name} - Design modification and scope adjustment",
+                    'reason' => "Client requested changes in design specifications and additional features",
                     'additional_days' => rand(5, 30),
                     'additional_cost' => rand(50000, 500000),
                     'status' => $coStatus,
                     'requested_by' => $pm->id,
                     'approved_by' => ($coStatus === 'approved') ? $adminUser->id : null,
                     'approved_at' => ($coStatus === 'approved') ? $coDate->copy()->addDays(rand(1, 5)) : null,
-                    'approval_notes' => ($coStatus === 'approved') ? 'Approved as requested' : null,
+                    'approval_notes' => ($coStatus === 'approved') ? 'Approved as requested by client' : null,
                     'created_at' => $coDate,
                     'updated_at' => $coDate,
                 ]);
                 
-                                $transactions[] = ['type' => 'change_order', 'id' => $changeOrder->id, 'date' => $coDate];
-                $changeOrdersCreated++;
+                $this->changeOrdersCreated++;
+                $this->info("  ✓ Created Change Order: {$changeOrder->change_order_number}");
             }
         }
 
-        $totalTransactions = $prsCreated + $quotationsCreated + $posCreated + $grsCreated + $issuancesCreated + $changeOrdersCreated;
-        $avgTransactionsPerProject = $existingProjects->count() > 0 ? round($totalTransactions / $existingProjects->count(), 2) : 0;
+        $totalTransactions = $this->getTotalTransactions();
         
         $this->info("\n✅ Transaction seeding completed!");
         $this->info("📊 Summary:");
-        $this->info("   - Projects Processed: {$existingProjects->count()}");
-        $this->info("   - Purchase Requests: {$prsCreated}");
-        $this->info("   - Quotations: {$quotationsCreated}");
-        $this->info("   - Purchase Orders: {$posCreated}");
-        $this->info("   - Goods Receipts: {$grsCreated}");
-        $this->info("   - Material Issuances: {$issuancesCreated}");
-        $this->info("   - Change Orders: {$changeOrdersCreated}");
+        $this->info("   - Completed Projects: {$this->completedProjectsCreated}");
+        $this->info("   - Purchase Requests: {$this->prsCreated}");
+        $this->info("   - Quotations: {$this->quotationsCreated}");
+        $this->info("   - Purchase Orders: {$this->posCreated}");
+        $this->info("   - Goods Receipts: {$this->grsCreated}");
+        $this->info("   - Goods Returns: {$this->goodsReturnsCreated}");
+        $this->info("   - Material Issuances: {$this->issuancesCreated}");
+        $this->info("   - Change Orders: {$this->changeOrdersCreated}");
         $this->info("   - Total Transactions: {$totalTransactions}");
-        $this->info("   - Average Transactions per Project: {$avgTransactionsPerProject}");
-        $this->info("\n📅 Transactions spread across last 6 months for trend visualization");
+        $this->info("\n📅 All transactions are properly linked following the system flow:");
+        $this->info("   Projects → PR → Quotations → PO → GR → Goods Returns → Material Issuances");
         
         return 0;
     }
-}
 
+    protected function getTotalTransactions(): int
+    {
+        return $this->prsCreated + $this->quotationsCreated + $this->posCreated + 
+               $this->grsCreated + $this->goodsReturnsCreated + $this->issuancesCreated + 
+               $this->changeOrdersCreated;
+    }
+}

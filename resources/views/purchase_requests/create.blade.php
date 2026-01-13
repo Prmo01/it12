@@ -24,10 +24,10 @@
                 <div class="row g-3">
                     <div class="col-md-5">
                         <label class="form-label-custom">
-                            <i class="bi bi-folder"></i> Project
+                            <i class="bi bi-folder"></i> Project <span class="text-danger">*</span>
                         </label>
-                        <select name="project_id" class="form-control-custom @error('project_id') is-invalid @enderror">
-                            <option value="">Select Project (Optional)</option>
+                        <select name="project_id" class="form-control-custom @error('project_id') is-invalid @enderror" required>
+                            <option value="">Select Project</option>
                             @foreach($projects as $proj)
                                 <option value="{{ $proj->id }}" {{ (request('project_id') == $proj->id || old('project_id') == $proj->id) ? 'selected' : '' }}>
                                     {{ $proj->name }} ({{ $proj->project_code }})
@@ -39,13 +39,13 @@
                                 <i class="bi bi-exclamation-circle"></i> {{ $message }}
                             </div>
                         @enderror
-                        <small class="form-help-text">Associate this purchase request with a project (optional)</small>
+                        <small class="form-help-text">Select the project for this purchase request</small>
                     </div>
                     <div class="col-md-7">
                         <label class="form-label-custom">
-                            <i class="bi bi-card-text"></i> Purpose
+                            <i class="bi bi-card-text"></i> Purpose <span class="text-danger">*</span>
                         </label>
-                        <textarea name="purpose" class="form-control-custom textarea-custom @error('purpose') is-invalid @enderror" rows="3" placeholder="Enter the purpose of this purchase request">{{ old('purpose') }}</textarea>
+                        <textarea name="purpose" class="form-control-custom textarea-custom @error('purpose') is-invalid @enderror" rows="3" placeholder="Enter the purpose of this purchase request" required>{{ old('purpose') }}</textarea>
                         @error('purpose')
                             <div class="invalid-feedback-custom">
                                 <i class="bi bi-exclamation-circle"></i> {{ $message }}

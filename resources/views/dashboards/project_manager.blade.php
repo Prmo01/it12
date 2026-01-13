@@ -15,10 +15,10 @@
 </div>
 
 <!-- Stats Cards -->
-<div class="row mb-2">
-    <div class="col-md-3 mb-3">
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
         <a href="{{ route('projects.index') }}" class="stat-card-link">
-            <div class="stat-card stat-card-primary">
+            <div class="stat-card stat-card-primary h-100">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -35,9 +35,9 @@
         </a>
     </div>
     
-    <div class="col-md-3 mb-3">
+    <div class="col-md-3">
         <a href="{{ route('projects.index', ['status' => 'active']) }}" class="stat-card-link">
-            <div class="stat-card stat-card-success">
+            <div class="stat-card stat-card-success h-100">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -54,9 +54,9 @@
         </a>
     </div>
     
-    <div class="col-md-3 mb-3">
+    <div class="col-md-3">
         <a href="{{ route('change-orders.index') }}" class="stat-card-link">
-            <div class="stat-card stat-card-warning">
+            <div class="stat-card stat-card-warning h-100">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -73,9 +73,9 @@
         </a>
     </div>
     
-    <div class="col-md-3 mb-3">
+    <div class="col-md-3">
         <a href="{{ route('purchase-requests.index') }}" class="stat-card-link">
-            <div class="stat-card stat-card-info">
+            <div class="stat-card stat-card-info h-100">
                 <div class="stat-card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="stat-content">
@@ -94,9 +94,9 @@
 </div>
 
 <!-- Charts Row -->
-<div class="row mb-2">
-    <div class="col-md-6 mb-3">
-        <div class="chart-card">
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="chart-card h-100">
             <div class="chart-card-header">
                 <h5 class="chart-title">Projects by Status</h5>
                 <i class="bi bi-pie-chart chart-icon"></i>
@@ -107,8 +107,8 @@
         </div>
     </div>
     
-    <div class="col-md-6 mb-3">
-        <div class="chart-card">
+    <div class="col-md-6">
+        <div class="chart-card h-100">
             <div class="chart-card-header">
                 <h5 class="chart-title">Monthly Projects Trend</h5>
                 <i class="bi bi-graph-up chart-icon"></i>
@@ -142,8 +142,8 @@
 </div>
 
 <!-- Recent Activities -->
-<div class="row">
-    <div class="col-md-4 mb-3">
+<div class="row g-3">
+    <div class="col-md-4">
         <div class="activity-card">
             <div class="activity-card-header">
                 <h5 class="activity-title">Recent Projects</h5>
@@ -173,8 +173,8 @@
         </div>
     </div>
     
-    <div class="col-md-4 mb-3">
-        <div class="activity-card">
+    <div class="col-md-4">
+        <div class="activity-card h-100">
             <div class="activity-card-header">
                 <h5 class="activity-title">Recent Change Orders</h5>
                 <a href="{{ route('change-orders.index') }}" class="activity-link">View all <i class="bi bi-arrow-right"></i></a>
@@ -204,8 +204,8 @@
         </div>
     </div>
     
-    <div class="col-md-4 mb-3">
-        <div class="activity-card">
+    <div class="col-md-4">
+        <div class="activity-card h-100">
             <div class="activity-card-header">
                 <h5 class="activity-title">Recent Purchase Requests</h5>
                 <a href="{{ route('purchase-requests.index') }}" class="activity-link">View all <i class="bi bi-arrow-right"></i></a>

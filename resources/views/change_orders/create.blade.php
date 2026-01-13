@@ -28,7 +28,7 @@
                         </label>
                         <select name="project_id" class="form-control-custom @error('project_id') is-invalid @enderror" required>
                             <option value="">Select Project</option>
-                            @foreach(\App\Models\Project::all() as $proj)
+                            @foreach($projects as $proj)
                                 <option value="{{ $proj->id }}" {{ (request('project_id') == $proj->id || old('project_id') == $proj->id) ? 'selected' : '' }}>{{ $proj->name }}</option>
                             @endforeach
                         </select>

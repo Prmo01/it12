@@ -161,7 +161,7 @@ class User extends Authenticatable
                 'change_orders' => false, // Hidden - not essential
                 'purchase_requests' => false, // Hidden - not essential
                 'quotations' => false, // Hidden - not essential
-                'purchase_orders' => false, // Hidden - not essential (they see it when processing Goods Receipts)
+                'purchase_orders' => true, // Shown - to see approved POs and create Goods Receipts
                 'goods_receipts' => true, // Shown - limited access (approve/reject)
                 'goods_returns' => true, // Shown - full access
                 'inventory' => false, // Hidden - read-only not essential

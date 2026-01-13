@@ -6,6 +6,8 @@ use App\Models\PurchaseRequest;
 use App\Models\Quotation;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
+use App\Models\GoodsReceipt;
+use App\Models\GoodsReceiptItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -54,11 +56,21 @@ class ProcurementService
             $data['quotation_number'] = $quotationNumber;
             $data['status'] = 'pending';
 
-            // Get project_code from purchase_request
+            // Get project_code from purchase_request and auto-approve if submitted
             if (isset($data['purchase_request_id'])) {
                 $purchaseRequest = PurchaseRequest::with('project')->find($data['purchase_request_id']);
-                if ($purchaseRequest && $purchaseRequest->project) {
-                    $data['project_code'] = $purchaseRequest->project->project_code;
+                if ($purchaseRequest) {
+                    if ($purchaseRequest->project) {
+                        $data['project_code'] = $purchaseRequest->project->project_code;
+                    }
+                    // Auto-approve submitted purchase requests when quotation is created
+                    if ($purchaseRequest->status === 'submitted') {
+                        $purchaseRequest->update([
+                            'status' => 'approved',
+                            'approved_by' => auth()->id(),
+                            'approved_at' => now(),
+                        ]);
+                    }
                 }
             }
 
@@ -142,11 +154,60 @@ class ProcurementService
     public function approvePurchaseOrder(PurchaseOrder $po, int $approvedBy): PurchaseOrder
     {
         return DB::transaction(function () use ($po, $approvedBy) {
+            // Update PO status
             $po->update([
                 'status' => 'approved',
                 'approved_by' => $approvedBy,
                 'approved_at' => now(),
             ]);
+
+            // Check if a Goods Receipt already exists for this PO (not approved)
+            $existingGR = $po->goodsReceipts()
+                ->where('status', '!=', 'approved')
+                ->first();
+
+            // Only create a new GR if one doesn't exist
+            if (!$existingGR) {
+                // Load PO with items and project
+                $po->load(['items.inventoryItem', 'purchaseRequest.project']);
+
+                // Generate unique GR number
+                do {
+                    $grNumber = 'GR-' . strtoupper(Str::random(8));
+                } while (GoodsReceipt::where('gr_number', $grNumber)->exists());
+
+                // Get project_code from PO
+                $projectCode = $po->project_code;
+                if (!$projectCode && $po->purchaseRequest && $po->purchaseRequest->project) {
+                    $projectCode = $po->purchaseRequest->project->project_code;
+                }
+
+                // Create Goods Receipt with 'pending' status for Warehouse Manager
+                $gr = GoodsReceipt::create([
+                    'gr_number' => $grNumber,
+                    'purchase_order_id' => $po->id,
+                    'project_code' => $projectCode,
+                    'gr_date' => now(),
+                    'status' => 'pending', // Set to pending so Warehouse Manager can see and approve/reject
+                    'delivery_note_number' => 'PENDING-' . $po->po_number, // Placeholder, can be updated by warehouse manager
+                    'remarks' => 'Auto-created from approved Purchase Order',
+                    'received_by' => null, // Will be set when warehouse manager receives it
+                ]);
+
+                // Create Goods Receipt Items from Purchase Order Items
+                foreach ($po->items as $poItem) {
+                    GoodsReceiptItem::create([
+                        'goods_receipt_id' => $gr->id,
+                        'purchase_order_item_id' => $poItem->id,
+                        'inventory_item_id' => $poItem->inventory_item_id,
+                        'quantity_ordered' => $poItem->quantity,
+                        'quantity_received' => $poItem->quantity, // Default to ordered quantity, can be adjusted
+                        'quantity_accepted' => $poItem->quantity, // Default to ordered quantity, can be adjusted by warehouse manager
+                        'quantity_rejected' => 0,
+                        'rejection_reason' => null,
+                    ]);
+                }
+            }
 
             return $po->fresh();
         });

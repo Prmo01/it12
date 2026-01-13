@@ -8,7 +8,9 @@
         <h1 class="h2 mb-1"><i class="bi bi-box-arrow-right"></i> Goods Issue</h1>
         <p class="text-muted mb-0">Track material issuances for projects and work orders</p>
     </div>
+    @if(auth()->user()->isAdmin() || auth()->user()->hasRole('inventory_manager'))
     <a href="{{ route('material-issuance.create') }}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> New Goods Issue</a>
+    @endif
 </div>
 
 <div class="card gi-card">
@@ -98,7 +100,7 @@
                                     <a href="{{ route('material-issuance.show', $issuance) }}" class="btn btn-sm btn-action btn-view" title="View">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    @if($issuance->status !== 'cancelled' && $issuance->status !== 'issued')
+                                    @if(($issuance->status !== 'cancelled' && $issuance->status !== 'issued') && (auth()->user()->isAdmin() || auth()->user()->hasRole('inventory_manager')))
                                     <form action="{{ route('material-issuance.cancel', $issuance) }}" method="POST" class="d-inline cancel-form" data-id="{{ $issuance->id }}">
                                         @csrf
                                         <input type="hidden" name="cancellation_reason" class="cancel-reason-input">

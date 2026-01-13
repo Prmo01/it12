@@ -48,10 +48,7 @@
                         <tr>
                             <td><span class="text-muted font-monospace">{{ $project->project_code }}</span></td>
                             <td>
-                                <div class="fw-semibold text-truncate" style="max-width: 300px;" title="{{ $project->name }}">{{ $project->name }}</div>
-                                @if($project->description)
-                                    <small class="text-muted d-block text-truncate" style="max-width: 300px;" title="{{ $project->description }}">{{ \Illuminate\Support\Str::limit($project->description, 50) }}</small>
-                                @endif
+                                <div class="fw-semibold">{{ $project->name }}</div>
                             </td>
                             <td>
                                 @if($project->projectManager)

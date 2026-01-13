@@ -23,25 +23,44 @@ class PurchaseOrderController extends Controller
 
     public function index(Request $request)
     {
-        $query = PurchaseOrder::with(['purchaseRequest', 'items.supplier']);
+        $query = PurchaseOrder::with(['purchaseRequest.project', 'items.supplier']);
 
-        if ($request->has('status')) {
+        // For warehouse managers, show only approved POs that don't have approved goods receipts
+        if (auth()->user()->hasRole('warehouse_manager')) {
+            $query->where('status', 'approved')
+                  ->whereDoesntHave('goodsReceipts', function ($q) {
+                      $q->where('status', 'approved');
+                  });
+        } elseif ($request->has('status') && $request->status != '') {
             $query->where('status', $request->status);
         }
 
-        if ($request->has('supplier_id')) {
-            $query->where('supplier_id', $request->supplier_id);
+        if ($request->has('supplier_id') && $request->supplier_id != '') {
+            $query->whereHas('items', function($q) use ($request) {
+                $q->where('supplier_id', $request->supplier_id);
+            });
         }
 
-        $purchaseOrders = $query->latest()->paginate(15);
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('po_number', 'like', "%{$search}%")
+                  ->orWhere('project_code', 'like', "%{$search}%")
+                  ->orWhereHas('items.supplier', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $purchaseOrders = $query->latest()->paginate(15)->withQueryString();
 
         return view('purchase_orders.index', compact('purchaseOrders'));
     }
 
     public function pending(Request $request)
     {
-        $query = PurchaseOrder::with(['purchaseRequest', 'items.supplier'])
-            ->where('status', 'pending')
+        $query = PurchaseOrder::with(['purchaseRequest.project', 'items.supplier'])
+            ->whereIn('status', ['draft', 'pending'])
             ->whereDoesntHave('goodsReceipts', function ($q) {
                 $q->where('status', 'approved');
             });
@@ -80,7 +99,10 @@ class PurchaseOrderController extends Controller
             'quotation_id' => 'required|exists:quotations,id',
             'expected_delivery_date' => 'nullable|date',
             'terms_conditions' => 'nullable|string',
-            'delivery_address' => 'nullable|string',
+            'delivery_address' => 'required|string|min:10',
+        ], [
+            'delivery_address.required' => 'Please provide a delivery address.',
+            'delivery_address.min' => 'Delivery address must be at least 10 characters.',
         ]);
 
         $quotation = Quotation::findOrFail($validated['quotation_id']);

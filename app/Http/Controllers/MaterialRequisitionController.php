@@ -21,15 +21,29 @@ class MaterialRequisitionController extends Controller
     {
         $query = PurchaseRequest::with(['project', 'requestedBy', 'approvedBy']);
 
-        if ($request->has('status')) {
+        if ($request->has('status') && $request->status != '') {
             $query->where('status', $request->status);
         }
 
-        if ($request->has('project_id')) {
+        if ($request->has('project_id') && $request->project_id != '') {
             $query->where('project_id', $request->project_id);
         }
 
-        $purchaseRequests = $query->latest()->paginate(15);
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('pr_number', 'like', "%{$search}%")
+                  ->orWhereHas('project', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('project_code', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('requestedBy', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $purchaseRequests = $query->latest()->paginate(15)->withQueryString();
 
         return view('purchase_requests.index', compact('purchaseRequests'));
     }
@@ -41,21 +55,32 @@ class MaterialRequisitionController extends Controller
             $project = Project::findOrFail($request->project_id);
         }
         // Exclude completed projects - you shouldn't create purchase requests for completed projects
-        $projects = Project::where('status', '!=', 'completed')->orderBy('name')->get();
+        $projectsQuery = Project::where('status', '!=', 'completed');
+        
+        // Filter projects for project managers - show only their assigned projects
+        if (auth()->user()->hasRole('project_manager')) {
+            $projectsQuery->where('project_manager_id', auth()->id());
+        }
+        
+        $projects = $projectsQuery->orderBy('name')->get();
         return view('purchase_requests.create', compact('project', 'projects'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'project_id' => 'nullable|exists:projects,id',
-            'purpose' => 'nullable|string',
+            'project_id' => 'required|exists:projects,id',
+            'purpose' => 'required|string|min:10',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.inventory_item_id' => 'required|exists:inventory_items,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_cost' => 'nullable|numeric|min:0',
             'items.*.specifications' => 'nullable|string',
+        ], [
+            'project_id.required' => 'Please select a project for this purchase request.',
+            'purpose.required' => 'Please provide a purpose for this purchase request.',
+            'purpose.min' => 'Purpose must be at least 10 characters.',
         ]);
 
         // Check for duplicate items

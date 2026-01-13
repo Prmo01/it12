@@ -9,6 +9,13 @@
         border: 1px solid #e5e7eb;
         overflow: hidden;
         position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .stat-card-link {
+        display: flex;
+        height: 100%;
     }
     
     .stat-card::before {
@@ -63,41 +70,42 @@
     }
     
     .stat-card-body {
-        padding: 1.5rem;
+        padding: 1.75rem; /* Increased padding */
     }
     
     .stat-label {
-        font-size: 0.875rem;
+        font-size: 0.9375rem; /* 18.75px - increased */
         font-weight: 600;
         color: #6b7280;
-        margin: 0 0 0.5rem 0;
+        margin: 0 0 0.75rem 0; /* Increased margin */
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
     
     .stat-value {
-        font-size: 2.25rem;
+        font-size: 2.5rem; /* 50px - increased */
         font-weight: 700;
         color: #111827;
-        margin: 0 0 0.25rem 0;
-        line-height: 1;
+        margin: 0 0 0.5rem 0; /* Increased margin */
+        line-height: 1.1;
     }
     
     .stat-change {
-        font-size: 0.75rem;
+        font-size: 0.875rem; /* 17.5px - increased */
         display: block;
+        margin-top: 0.5rem; /* Added margin */
     }
     
     .stat-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 12px;
+        width: 64px; /* Increased size */
+        height: 64px; /* Increased size */
+        border-radius: 14px; /* Slightly larger radius */
         background: linear-gradient(135deg, var(--card-color), var(--card-color-light));
         display: flex;
         align-items: center;
         justify-content: center;
         color: #ffffff;
-        font-size: 1.75rem;
+        font-size: 2rem; /* 40px - increased */
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
     
@@ -109,6 +117,8 @@
         border: 1px solid #e5e7eb;
         overflow: hidden;
         transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
     }
     
     .chart-card:hover {
@@ -116,7 +126,7 @@
     }
     
     .chart-card-header {
-        padding: 1.25rem 1.5rem;
+        padding: 1.5rem 1.75rem; /* Increased padding */
         border-bottom: 1px solid #e5e7eb;
         display: flex;
         justify-content: space-between;
@@ -129,7 +139,7 @@
     }
     
     .chart-title {
-        font-size: 1rem;
+        font-size: 1.125rem; /* 22.5px - increased */
         font-weight: 600;
         color: #111827;
         margin: 0;
@@ -137,12 +147,12 @@
     
     .chart-icon {
         color: #6b7280;
-        font-size: 1.25rem;
+        font-size: 1.375rem; /* 27.5px - increased */
     }
     
     .chart-card-body {
-        padding: 1.5rem;
-        height: 320px;
+        padding: 1.75rem; /* Increased padding */
+        height: 360px; /* Increased height */
         position: relative;
     }
     
@@ -154,6 +164,8 @@
         border: 1px solid #e5e7eb;
         overflow: hidden;
         transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
     }
     
     .activity-card:hover {
@@ -161,7 +173,7 @@
     }
     
     .activity-card-header {
-        padding: 1.25rem 1.5rem;
+        padding: 1.5rem 1.75rem; /* Increased padding */
         border-bottom: 1px solid #e5e7eb;
         display: flex;
         justify-content: space-between;
@@ -170,20 +182,20 @@
     }
     
     .activity-title {
-        font-size: 1rem;
+        font-size: 1.125rem; /* 22.5px - increased */
         font-weight: 600;
         color: #111827;
         margin: 0;
     }
     
     .activity-link {
-        font-size: 0.875rem;
+        font-size: 0.9375rem; /* 18.75px - increased */
         color: #2563eb;
         text-decoration: none;
         font-weight: 500;
         display: flex;
         align-items: center;
-        gap: 0.25rem;
+        gap: 0.375rem; /* Increased gap */
         transition: color 0.2s ease;
     }
     
@@ -192,19 +204,19 @@
     }
     
     .activity-card-body {
-        padding: 0.75rem;
+        padding: 1rem; /* Increased padding */
     }
     
     .activity-item {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 1rem;
+        padding: 1.25rem; /* Increased padding */
         border-radius: 12px;
         text-decoration: none;
         color: inherit;
         transition: all 0.2s ease;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem; /* Increased margin */
     }
     
     .activity-item:hover {
@@ -224,28 +236,28 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem; /* Increased margin */
     }
     
     .activity-item-title {
-        font-size: 0.9375rem;
+        font-size: 1rem; /* 20px - increased */
         font-weight: 600;
         color: #111827;
         margin: 0;
     }
     
     .activity-item-meta {
-        font-size: 0.8125rem;
+        font-size: 0.875rem; /* 17.5px - increased */
         color: #6b7280;
         margin: 0;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.625rem; /* Increased gap */
     }
     
     .activity-arrow {
         color: #9ca3af;
-        font-size: 1.125rem;
+        font-size: 1.25rem; /* 25px - increased */
         transition: transform 0.2s ease;
     }
     

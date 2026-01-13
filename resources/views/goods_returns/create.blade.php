@@ -122,9 +122,9 @@
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label-custom">
-                                        <i class="bi bi-chat-left-text"></i> Item Reason
+                                        <i class="bi bi-chat-left-text"></i> Item Reason <span class="text-danger item-reason-required" style="display: none;">*</span>
                                     </label>
-                                    <input type="text" name="items[{{ $itemIndex }}][reason]" class="form-control-custom" value="{{ old('items.'.$itemIndex.'.reason') }}" placeholder="Reason for this item">
+                                    <input type="text" name="items[{{ $itemIndex }}][reason]" class="form-control-custom item-reason-input" value="{{ old('items.'.$itemIndex.'.reason') }}" placeholder="Reason for this item">
                                 </div>
                             </div>
                         </div>
@@ -584,11 +584,33 @@
                     this.classList.remove('is-invalid');
                     this.setCustomValidity('');
                 }
-            } else {
-                // Clear validation for 0 or empty values
-                this.classList.remove('is-invalid');
-                this.setCustomValidity('');
-            }
+                } else {
+                    // Clear validation for 0 or empty values
+                    this.classList.remove('is-invalid');
+                    this.setCustomValidity('');
+                }
+            });
+        });
+        
+        // Make item reason required when quantity > 0
+        document.querySelectorAll('.quantity-input').forEach(function(qtyInput) {
+            qtyInput.addEventListener('input', function() {
+                const row = this.closest('.item-row-modern');
+                const reasonInput = row.querySelector('.item-reason-input');
+                const reasonRequired = row.querySelector('.item-reason-required');
+                const quantity = parseFloat(this.value) || 0;
+                
+                if (quantity > 0) {
+                    reasonInput.setAttribute('required', 'required');
+                    reasonRequired.style.display = 'inline';
+                } else {
+                    reasonInput.removeAttribute('required');
+                    reasonRequired.style.display = 'none';
+                }
+            });
+            
+            // Trigger on page load to set initial state
+            qtyInput.dispatchEvent(new Event('input'));
         });
     });
 </script>

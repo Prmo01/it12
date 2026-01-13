@@ -38,9 +38,9 @@
                     </div>
                     <div class="col-md-12">
                         <label class="form-label-custom">
-                            <i class="bi bi-geo-alt"></i> Delivery Address
+                            <i class="bi bi-geo-alt"></i> Delivery Address <span class="text-danger">*</span>
                         </label>
-                        <textarea name="delivery_address" class="form-control-custom textarea-custom @error('delivery_address') is-invalid @enderror" rows="3" placeholder="Enter delivery address">{{ old('delivery_address') }}</textarea>
+                        <textarea name="delivery_address" class="form-control-custom textarea-custom @error('delivery_address') is-invalid @enderror" rows="3" placeholder="Enter delivery address" required>{{ old('delivery_address') }}</textarea>
                         @error('delivery_address')
                             <div class="invalid-feedback-custom">
                                 <i class="bi bi-exclamation-circle"></i> {{ $message }}

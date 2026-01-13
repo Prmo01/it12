@@ -28,9 +28,9 @@
                         </label>
                         <select name="purchase_request_id" class="form-control-custom @error('purchase_request_id') is-invalid @enderror" required id="pr-select">
                             <option value="">Select Purchase Request</option>
-                            @foreach(\App\Models\PurchaseRequest::where('status', 'approved')->get() as $pr)
+                            @foreach($purchaseRequests as $pr)
                                 <option value="{{ $pr->id }}" {{ (request('purchase_request_id') == $pr->id || old('purchase_request_id') == $pr->id) ? 'selected' : '' }}>
-                                    {{ $pr->pr_number }} - {{ $pr->project->name ?? 'N/A' }}
+                                    {{ $pr->pr_number }} - {{ $pr->project->name ?? 'N/A' }} ({{ ucfirst($pr->status) }})
                                 </option>
                             @endforeach
                         </select>
