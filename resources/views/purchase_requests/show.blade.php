@@ -11,13 +11,13 @@
     <div class="d-flex gap-2">
         @if(($purchaseRequest->status === 'draft') && (auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing') || auth()->user()->hasRole('project_manager')))
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#submitPRModal">
-                <i class="bi bi-send"></i> Submit for Approval
-            </button>
+                    <i class="bi bi-send"></i> Submit for Approval
+                </button>
         @endif
         @if(($purchaseRequest->status === 'submitted') && auth()->user()->isAdmin())
             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approvePRModal">
-                <i class="bi bi-check-circle"></i> Approve
-            </button>
+                    <i class="bi bi-check-circle"></i> Approve
+                </button>
         @endif
         @if($purchaseRequest->status !== 'cancelled' && !$purchaseRequest->quotations()->exists() && (auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing') || auth()->user()->hasRole('project_manager')))
             <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#cancelPRModal">

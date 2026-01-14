@@ -36,6 +36,7 @@ class MaterialIssuance extends Model
             'issuance_date' => 'date',
             'approved_at' => 'datetime',
             'issued_at' => 'datetime',
+            'received_at' => 'datetime',
         ];
     }
 

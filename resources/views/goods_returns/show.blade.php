@@ -11,8 +11,8 @@
     <div class="d-flex gap-2">
         @if(in_array($goodsReturn->status, ['draft', 'pending']))
             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveReturnModal">
-                <i class="bi bi-check-circle"></i> Approve & Update Stock
-            </button>
+                    <i class="bi bi-check-circle"></i> Approve & Update Stock
+                </button>
         @endif
         @if($goodsReturn->status !== 'cancelled' && $goodsReturn->status !== 'approved')
             <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#cancelReturnModal">

@@ -207,7 +207,7 @@ class GoodsReturnController extends Controller
         // Process stock updates for each returned item
         foreach ($goodsReturn->items as $item) {
             if ($item->quantity > 0) {
-                $this->stockService->processGoodsReturn($item->inventory_item_id, $item->quantity, $goodsReturn->id);
+            $this->stockService->processGoodsReturn($item->inventory_item_id, $item->quantity, $goodsReturn->id);
             }
         }
 

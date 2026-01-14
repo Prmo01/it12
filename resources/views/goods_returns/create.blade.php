@@ -604,19 +604,19 @@
                 
                 if (quantity > 0) {
                     if (reasonInput) {
-                        reasonInput.setAttribute('required', 'required');
+                    reasonInput.setAttribute('required', 'required');
                         reasonInput.setAttribute('minlength', '10');
                     }
                     if (reasonRequired) {
-                        reasonRequired.style.display = 'inline';
+                    reasonRequired.style.display = 'inline';
                     }
                 } else {
                     if (reasonInput) {
-                        reasonInput.removeAttribute('required');
+                    reasonInput.removeAttribute('required');
                         reasonInput.removeAttribute('minlength');
                     }
                     if (reasonRequired) {
-                        reasonRequired.style.display = 'none';
+                    reasonRequired.style.display = 'none';
                     }
                 }
             });

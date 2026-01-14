@@ -11,13 +11,13 @@
     <div class="d-flex gap-2">
         @if($materialIssuance->status === 'draft')
             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveMIModal">
-                <i class="bi bi-check-circle"></i> Approve
-            </button>
+                    <i class="bi bi-check-circle"></i> Approve
+                </button>
         @endif
         @if($materialIssuance->status === 'approved')
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#issueMIModal">
-                <i class="bi bi-box-arrow-up"></i> Issue Goods
-            </button>
+                    <i class="bi bi-box-arrow-up"></i> Issue Goods
+                </button>
         @endif
         @if($materialIssuance->status === 'issued' && $materialIssuance->delivery_status === 'pending' && (auth()->user()->hasRole('inventory_manager') || auth()->user()->isAdmin()))
             <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#markDeliveredModal">

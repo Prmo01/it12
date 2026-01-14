@@ -11,8 +11,8 @@
     <div class="d-flex gap-2">
         @if($changeOrder->status === 'pending')
             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveCOModal">
-                <i class="bi bi-check-circle"></i> Approve
-            </button>
+                    <i class="bi bi-check-circle"></i> Approve
+                </button>
             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
                 <i class="bi bi-x-circle"></i> Reject
             </button>
