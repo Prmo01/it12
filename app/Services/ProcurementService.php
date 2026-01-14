@@ -56,21 +56,11 @@ class ProcurementService
             $data['quotation_number'] = $quotationNumber;
             $data['status'] = 'pending';
 
-            // Get project_code from purchase_request and auto-approve if submitted
+            // Get project_code from purchase_request
             if (isset($data['purchase_request_id'])) {
                 $purchaseRequest = PurchaseRequest::with('project')->find($data['purchase_request_id']);
-                if ($purchaseRequest) {
-                    if ($purchaseRequest->project) {
-                        $data['project_code'] = $purchaseRequest->project->project_code;
-                    }
-                    // Auto-approve submitted purchase requests when quotation is created
-                    if ($purchaseRequest->status === 'submitted') {
-                        $purchaseRequest->update([
-                            'status' => 'approved',
-                            'approved_by' => auth()->id(),
-                            'approved_at' => now(),
-                        ]);
-                    }
+                if ($purchaseRequest && $purchaseRequest->project) {
+                    $data['project_code'] = $purchaseRequest->project->project_code;
                 }
             }
 

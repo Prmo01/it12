@@ -480,12 +480,7 @@
             <form method="POST" action="{{ route('goods-receipts.approve', $goodsReceipt) }}">
                 @csrf
                 <div class="modal-body">
-                    <p class="mb-3">Please review the received items and provide feedback (optional):</p>
-                    <div class="mb-3">
-                        <label for="inventory_feedback" class="form-label">Feedback / Notes</label>
-                        <textarea name="inventory_feedback" id="inventory_feedback" class="form-control" rows="4" placeholder="Enter feedback about the received items (e.g., items are correct, some items damaged, etc.)"></textarea>
-                        <small class="text-muted">Optional: Add notes about item condition, damages, or any discrepancies.</small>
-                    </div>
+                    <p class="mb-3">Please review the received items before approving:</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

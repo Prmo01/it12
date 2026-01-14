@@ -79,7 +79,7 @@
                             <td><span class="text-muted font-monospace">{{ $return->return_number }}</span></td>
                             <td>
                                 @if($return->project_code)
-                                    <span class="badge badge-info font-monospace">{{ $return->project_code }}</span>
+                                    <span class="font-monospace" style="color: #000000;">{{ $return->project_code }}</span>
                                 @else
                                     <span class="text-muted">N/A</span>
                                 @endif

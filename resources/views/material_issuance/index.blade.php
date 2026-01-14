@@ -83,7 +83,7 @@
                                 <div class="fw-semibold">{{ $issuance->project->name ?? 'N/A' }}</div>
                             </td>
                             <td>
-                                <span class="badge badge-info">{{ ucfirst($issuance->issuance_type ?? 'project') }}</span>
+                                <span style="color: #2563eb; font-weight: 600;">{{ ucfirst($issuance->issuance_type ?? 'project') }}</span>
                             </td>
                             <td>
                                 <span class="font-monospace">{{ $issuance->work_order_number ?? 'N/A' }}</span>

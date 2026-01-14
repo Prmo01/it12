@@ -80,7 +80,7 @@
                     <div class="info-item">
                         <span class="info-label">Issuance Type</span>
                         <span class="info-value">
-                            <span class="badge badge-info">{{ ucfirst($materialIssuance->issuance_type ?? 'project') }}</span>
+                            <span style="color: #2563eb; font-weight: 600;">{{ ucfirst($materialIssuance->issuance_type ?? 'project') }}</span>
                         </span>
                     </div>
                     <div class="info-item">

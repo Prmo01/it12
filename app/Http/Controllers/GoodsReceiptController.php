@@ -19,7 +19,7 @@ class GoodsReceiptController extends Controller
 
     public function index(Request $request)
     {
-        $query = GoodsReceipt::with(['purchaseOrder.items.supplier', 'purchaseOrder.purchaseRequest.project', 'receivedBy', 'approvedBy', 'warehouseApprovedBy', 'inventoryApprovedBy']);
+        $query = GoodsReceipt::with(['purchaseOrder.items.supplier', 'purchaseOrder.purchaseRequest.project', 'receivedBy', 'approvedBy', 'warehouseApprovedBy']);
 
         if ($request->has('status') && $request->status != '') {
             $query->where('status', $request->status);
@@ -136,7 +136,7 @@ class GoodsReceiptController extends Controller
 
     public function show(GoodsReceipt $goodsReceipt)
     {
-        $goodsReceipt->load(['purchaseOrder', 'items.purchaseOrderItem.supplier', 'items.inventoryItem', 'receivedBy', 'approvedBy', 'warehouseApprovedBy', 'inventoryApprovedBy']);
+        $goodsReceipt->load(['purchaseOrder', 'items.purchaseOrderItem.supplier', 'items.inventoryItem', 'receivedBy', 'approvedBy', 'warehouseApprovedBy']);
         return view('goods_receipts.show', compact('goodsReceipt'));
     }
 
@@ -153,17 +153,10 @@ class GoodsReceiptController extends Controller
             return redirect()->back()->with('error', 'Only pending goods receipts can be approved.');
         }
 
-        $validated = $request->validate([
-            'inventory_feedback' => 'nullable|string|max:1000',
-        ]);
-
         $goodsReceipt->update([
             'status' => 'approved',
             'approved_by' => $user->id,
             'approved_at' => now(),
-            'inventory_approved_by' => $user->id,
-            'inventory_approved_at' => now(),
-            'inventory_feedback' => $validated['inventory_feedback'] ?? null,
         ]);
 
         // Reload with relationships needed for stock processing

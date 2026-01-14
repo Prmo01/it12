@@ -8,6 +8,7 @@ use App\Models\PurchaseRequest;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class InventoryController extends Controller
 {
@@ -22,23 +23,26 @@ class InventoryController extends Controller
     {
         $query = InventoryItem::withCount('stockMovements');
 
-        if ($request->has('item_type')) {
-            $query->where('item_type', $request->item_type);
-        }
-
-        if ($request->has('status')) {
+        // Status filter always applies
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('item_code', 'like', "%{$search}%");
+        // Search filter
+        $searchTerm = trim($request->input('search', ''));
+        if ($searchTerm !== '') {
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where(DB::raw('LOWER(name)'), 'like', '%' . strtolower($searchTerm) . '%')
+                  ->orWhere(DB::raw('LOWER(item_code)'), 'like', '%' . strtolower($searchTerm) . '%');
             });
         }
 
-        $items = $query->latest()->paginate(10);
+        // Type filter - applies independently, can be combined with search
+        if ($request->filled('item_type')) {
+            $query->where('item_type', $request->item_type);
+        }
+
+        $items = $query->latest()->paginate(10)->withQueryString();
 
         // Add current stock to each item
         $items->getCollection()->transform(function ($item) {

@@ -13,6 +13,43 @@
 
 <div class="card goods-list-card">
     <div class="card-body">
+        <form method="GET" class="mb-4 filter-form">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group-custom">
+                        <i class="bi bi-search input-icon"></i>
+                        <input type="text" name="search" class="form-control-custom" placeholder="Search by name or code..." value="{{ request('search') }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="item_type" class="form-select-custom">
+                        <option value="">All Types</option>
+                        <option value="raw_material" {{ request('item_type') == 'raw_material' ? 'selected' : '' }}>Raw Material</option>
+                        <option value="finished_good" {{ request('item_type') == 'finished_good' ? 'selected' : '' }}>Finished Good</option>
+                        <option value="consumable" {{ request('item_type') == 'consumable' ? 'selected' : '' }}>Consumable</option>
+                        <option value="tool" {{ request('item_type') == 'tool' ? 'selected' : '' }}>Tool</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="status" class="form-select-custom">
+                        <option value="">All Statuses</option>
+                        <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
+                        <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="bi bi-funnel"></i> Filter
+                    </button>
+                    @if(request()->hasAny(['search', 'item_type', 'status']))
+                    <a href="{{ route('inventory.index') }}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                    @endif
+                </div>
+            </div>
+        </form>
+        
         <div class="table-responsive">
             <table class="table table-modern">
                 <thead>
@@ -94,6 +131,51 @@
         border-radius: 16px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         border: 1px solid #e5e7eb;
+    }
+    
+    .filter-form {
+        margin-bottom: 1.5rem;
+    }
+    
+    .input-group-custom {
+        position: relative;
+    }
+    
+    .input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        z-index: 1;
+    }
+    
+    .form-control-custom {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 0.9375rem;
+    }
+    
+    .form-control-custom:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    
+    .form-select-custom {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 0.9375rem;
+    }
+    
+    .form-select-custom:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
     
     .table-modern {

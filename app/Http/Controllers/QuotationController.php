@@ -54,11 +54,17 @@ class QuotationController extends Controller
         $purchaseRequest = null;
         if ($request->has('purchase_request_id')) {
             $purchaseRequest = PurchaseRequest::with('items.inventoryItem')->findOrFail($request->purchase_request_id);
+            
+            // Validate that the purchase request is approved
+            if ($purchaseRequest->status !== 'approved') {
+                return redirect()->route('quotations.create')
+                    ->with('error', 'Quotations can only be created for approved purchase requests. The selected purchase request status is: ' . ucfirst($purchaseRequest->status) . '.');
+            }
         }
         
         // Get available purchase requests for dropdown
-        // Include both 'approved' and 'submitted' statuses, and exclude those that already have quotations
-        $purchaseRequestsQuery = PurchaseRequest::whereIn('status', ['approved', 'submitted'])
+        // Only include 'approved' status, and exclude those that already have quotations
+        $purchaseRequestsQuery = PurchaseRequest::where('status', 'approved')
             ->whereDoesntHave('quotations', function($q) {
                 $q->whereNotIn('status', ['rejected', 'cancelled']);
             })
@@ -92,6 +98,14 @@ class QuotationController extends Controller
             'items.*.unit_price' => 'nullable|numeric|min:0',
             'items.*.specifications' => 'nullable|string',
         ]);
+
+        // Validate that the purchase request is approved
+        $purchaseRequest = PurchaseRequest::findOrFail($validated['purchase_request_id']);
+        if ($purchaseRequest->status !== 'approved') {
+            return back()->withErrors([
+                'purchase_request_id' => 'Quotations can only be created for approved purchase requests. The selected purchase request status is: ' . ucfirst($purchaseRequest->status) . '.'
+            ])->withInput();
+        }
 
         $quotation = $this->procurementService->createQuotation($validated);
 

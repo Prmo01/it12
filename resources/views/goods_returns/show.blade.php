@@ -61,7 +61,7 @@
                         <span class="info-label">Project Code</span>
                         <span class="info-value">
                             @if($goodsReturn->project_code)
-                                <span class="badge badge-info font-monospace">{{ $goodsReturn->project_code }}</span>
+                                <span class="font-monospace" style="color: #000000;">{{ $goodsReturn->project_code }}</span>
                             @else
                                 <span class="text-muted">N/A</span>
                             @endif

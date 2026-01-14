@@ -17,6 +17,14 @@
                 </button>
             </form>
         @endif
+        @if(($purchaseRequest->status === 'submitted') && auth()->user()->isAdmin())
+            <form method="POST" action="{{ route('purchase-requests.approve', $purchaseRequest) }}" class="d-inline">
+                @csrf
+                <button type="submit" class="btn btn-success" onclick="return confirm('Approve this purchase request?')">
+                    <i class="bi bi-check-circle"></i> Approve
+                </button>
+            </form>
+        @endif
         @if($purchaseRequest->status !== 'cancelled' && !$purchaseRequest->quotations()->exists() && (auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing') || auth()->user()->hasRole('project_manager')))
         <form action="{{ route('purchase-requests.cancel', $purchaseRequest) }}" method="POST" class="d-inline" id="cancelPRForm">
             @csrf
@@ -181,7 +189,7 @@
                 <h5 class="quick-actions-title"><i class="bi bi-lightning"></i> Quick Actions</h5>
             </div>
             <div class="quick-actions-body">
-                @if(auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing'))
+                @if(($purchaseRequest->status === 'approved') && (auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing')))
                 <a href="{{ route('quotations.create', ['purchase_request_id' => $purchaseRequest->id]) }}" class="quick-action-btn">
                     <div class="quick-action-icon bg-primary">
                         <i class="bi bi-file-earmark-spreadsheet"></i>

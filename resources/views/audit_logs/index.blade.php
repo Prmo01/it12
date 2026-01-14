@@ -67,7 +67,6 @@
                         <th>Action</th>
                         <th>Model</th>
                         <th>Description</th>
-                        <th>IP Address</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -86,7 +85,7 @@
                                 @endif
                             </td>
                             <td>
-                                <span class="badge badge-{{ $log->getActionColor() }}">
+                                <span class="text-{{ $log->getActionColor() }} fw-semibold">
                                     {{ ucfirst(str_replace('_', ' ', $log->action)) }}
                                 </span>
                             </td>
@@ -98,9 +97,6 @@
                                 <span class="text-muted">{{ \Illuminate\Support\Str::limit($log->description ?? 'N/A', 50) }}</span>
                             </td>
                             <td>
-                                <span class="text-muted font-monospace">{{ $log->ip_address ?? 'N/A' }}</span>
-                            </td>
-                            <td>
                                 <a href="{{ route('audit-logs.show', $log) }}" class="btn btn-sm btn-action btn-view" title="View Details">
                                     <i class="bi bi-eye"></i>
                                 </a>
@@ -108,7 +104,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-5">
+                            <td colspan="6" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="bi bi-journal-x"></i>
                                     <p class="mt-3 mb-0">No audit logs found</p>
