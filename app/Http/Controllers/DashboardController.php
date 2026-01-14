@@ -11,6 +11,7 @@ use App\Models\GoodsReceipt;
 use App\Models\GoodsReturn;
 use App\Services\StockService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -83,7 +84,7 @@ class DashboardController extends Controller
         // Monthly POs - use chart-specific date or global date
         $poDateFrom = request('po_date_from') ? \Carbon\Carbon::parse(request('po_date_from'))->startOfDay() : $dateFrom;
         $poDateTo = request('po_date_to') ? \Carbon\Carbon::parse(request('po_date_to'))->endOfDay() : $dateTo;
-        $monthlyPOs = PurchaseOrder::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as count")
+        $monthlyPOs = PurchaseOrder::selectRaw($this->getDateFormatFunction('created_at') . " as month, count(*) as count")
             ->whereBetween('created_at', [$poDateFrom, $poDateTo])
             ->groupBy('month')
             ->orderBy('month')
@@ -92,7 +93,7 @@ class DashboardController extends Controller
         // Monthly Projects - use chart-specific date or global date
         $projectsDateFrom = request('projects_date_from') ? \Carbon\Carbon::parse(request('projects_date_from'))->startOfDay() : $dateFrom;
         $projectsDateTo = request('projects_date_to') ? \Carbon\Carbon::parse(request('projects_date_to'))->endOfDay() : $dateTo;
-        $monthlyProjects = Project::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as count")
+        $monthlyProjects = Project::selectRaw($this->getDateFormatFunction('created_at') . " as month, count(*) as count")
             ->whereBetween('created_at', [$projectsDateFrom, $projectsDateTo])
             ->groupBy('month')
             ->orderBy('month')
@@ -152,7 +153,7 @@ class DashboardController extends Controller
         // Monthly Receipts - use chart-specific date or global date
         $receiptsDateFrom = request('receipts_date_from') ? \Carbon\Carbon::parse(request('receipts_date_from'))->startOfDay() : $dateFrom;
         $receiptsDateTo = request('receipts_date_to') ? \Carbon\Carbon::parse(request('receipts_date_to'))->endOfDay() : $dateTo;
-        $monthlyReceipts = GoodsReceipt::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as count")
+        $monthlyReceipts = GoodsReceipt::selectRaw($this->getDateFormatFunction('created_at') . " as month, count(*) as count")
             ->whereBetween('created_at', [$receiptsDateFrom, $receiptsDateTo])
             ->groupBy('month')
             ->orderBy('month')
@@ -161,7 +162,7 @@ class DashboardController extends Controller
         // Monthly Issuances - use chart-specific date or global date
         $issuancesDateFrom = request('issuances_date_from') ? \Carbon\Carbon::parse(request('issuances_date_from'))->startOfDay() : $dateFrom;
         $issuancesDateTo = request('issuances_date_to') ? \Carbon\Carbon::parse(request('issuances_date_to'))->endOfDay() : $dateTo;
-        $monthlyIssuances = MaterialIssuance::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as count")
+        $monthlyIssuances = MaterialIssuance::selectRaw($this->getDateFormatFunction('created_at') . " as month, count(*) as count")
             ->whereBetween('created_at', [$issuancesDateFrom, $issuancesDateTo])
             ->groupBy('month')
             ->orderBy('month')
@@ -212,7 +213,7 @@ class DashboardController extends Controller
         // Monthly POs - use chart-specific date or global date
         $poDateFrom = request('po_date_from') ? \Carbon\Carbon::parse(request('po_date_from'))->startOfDay() : $dateFrom;
         $poDateTo = request('po_date_to') ? \Carbon\Carbon::parse(request('po_date_to'))->endOfDay() : $dateTo;
-        $monthlyPOs = PurchaseOrder::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as count")
+        $monthlyPOs = PurchaseOrder::selectRaw($this->getDateFormatFunction('created_at') . " as month, count(*) as count")
             ->whereBetween('created_at', [$poDateFrom, $poDateTo])
             ->groupBy('month')
             ->orderBy('month')
@@ -275,7 +276,7 @@ class DashboardController extends Controller
         $projectsDateFrom = request('projects_date_from') ? \Carbon\Carbon::parse(request('projects_date_from'))->startOfDay() : $dateFrom;
         $projectsDateTo = request('projects_date_to') ? \Carbon\Carbon::parse(request('projects_date_to'))->endOfDay() : $dateTo;
         $monthlyProjects = Project::where('project_manager_id', $user->id)
-            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, count(*) as count")
+            ->selectRaw($this->getDateFormatFunction('created_at') . " as month, count(*) as count")
             ->whereBetween('created_at', [$projectsDateFrom, $projectsDateTo])
             ->groupBy('month')
             ->orderBy('month')
@@ -326,7 +327,7 @@ class DashboardController extends Controller
         // Monthly Approvals - use chart-specific date or global date
         $approvalsDateFrom = request('approvals_date_from') ? \Carbon\Carbon::parse(request('approvals_date_from'))->startOfDay() : ($dateFrom ? \Carbon\Carbon::parse($dateFrom)->startOfDay() : now()->subMonths(6)->startOfDay());
         $approvalsDateTo = request('approvals_date_to') ? \Carbon\Carbon::parse(request('approvals_date_to'))->endOfDay() : ($dateTo ? \Carbon\Carbon::parse($dateTo)->endOfDay() : now()->endOfDay());
-        $monthlyApprovals = GoodsReceipt::selectRaw("DATE_FORMAT(approved_at, '%Y-%m') as month, count(*) as count")
+        $monthlyApprovals = GoodsReceipt::selectRaw($this->getDateFormatFunction('approved_at') . " as month, count(*) as count")
             ->whereNotNull('approved_at')
             ->whereBetween('approved_at', [$approvalsDateFrom, $approvalsDateTo])
             ->groupBy('month')
@@ -395,6 +396,31 @@ class DashboardController extends Controller
             ->orderByDesc('order_count')
             ->take(5)
             ->get();
+    }
+
+    /**
+     * Helper method to get database-agnostic date format function
+     * Returns the appropriate SQL function based on the database driver
+     */
+    protected function getDateFormatFunction($column = 'created_at')
+    {
+        try {
+            // Try to get driver from active connection (most reliable)
+            $pdo = DB::connection()->getPdo();
+            $driver = $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+        } catch (\Exception $e) {
+            // Fallback to config
+            $connectionName = config('database.default');
+            $driver = config("database.connections.{$connectionName}.driver", 'mysql');
+        }
+        
+        // PostgreSQL uses pgsql as driver name
+        if ($driver === 'pgsql') {
+            return "TO_CHAR({$column}, 'YYYY-MM')";
+        } else {
+            // MySQL, SQLite, etc.
+            return "DATE_FORMAT({$column}, '%Y-%m')";
+        }
     }
 }
 
