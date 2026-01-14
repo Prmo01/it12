@@ -68,6 +68,7 @@
                         <th>Quotation Number</th>
                         <th>Project Code</th>
                         <th>Purchase Request</th>
+                        <th>Created By</th>
                         <th>Date</th>
                         <th>Total Quantity</th>
                         <th>Status</th>
@@ -87,6 +88,20 @@
                             </td>
                             <td>
                                 <div class="fw-semibold">{{ $quotation->purchaseRequest->pr_number ?? 'N/A' }}</div>
+                                @if($quotation->purchaseRequest && $quotation->purchaseRequest->requestedBy)
+                                    <small class="text-muted">
+                                        <i class="bi bi-person"></i> {{ $quotation->purchaseRequest->requestedBy->name }}
+                                    </small>
+                                @endif
+                            </td>
+                            <td>
+                                @if($quotation->createdBy)
+                                    <span class="text-muted">
+                                        <i class="bi bi-person-plus"></i> {{ $quotation->createdBy->name }}
+                                    </span>
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
                             </td>
                             <td><span class="text-muted">{{ $quotation->quotation_date->format('M d, Y') }}</span></td>
                             <td>
@@ -128,7 +143,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-5">
+                            <td colspan="8" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="bi bi-file-earmark-x"></i>
                                     <p class="mt-3 mb-0">No quotations found</p>

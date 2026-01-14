@@ -41,7 +41,7 @@ class ProjectController extends Controller
 
     public function completed(Request $request)
     {
-        $query = Project::with(['projectManager.role'])
+        $query = Project::with(['projectManager.role', 'history.user'])
             ->where('status', 'completed'); // Only completed projects
 
         if ($request->has('search')) {
@@ -89,8 +89,11 @@ class ProjectController extends Controller
             'changeOrders', 
             'purchaseRequests.requestedBy',
             'purchaseRequests.quotations.supplier',
+            'purchaseRequests.quotations.createdBy',
             'purchaseRequests.purchaseOrders.supplier',
-            'materialIssuances'
+            'purchaseRequests.purchaseOrders.createdBy',
+            'materialIssuances',
+            'history.user'
         ]);
         return view('projects.show', compact('project'));
     }
@@ -127,12 +130,17 @@ class ProjectController extends Controller
             return redirect()->route('projects.completed')->with('info', 'This project is already marked as done.');
         }
 
+        $oldStatus = $project->status;
+
         // Mark project as completed
         $project->update([
             'status' => 'completed',
             'actual_end_date' => now(),
             'progress_percentage' => 100,
         ]);
+
+        // Record history
+        $this->projectService->getHistoryService()->recordStatusChange($project, $oldStatus, 'completed');
 
         return redirect()->route('projects.completed')->with('success', 'Project marked as done and moved to completed projects!');
     }

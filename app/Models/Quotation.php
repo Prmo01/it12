@@ -22,6 +22,7 @@ class Quotation extends Model
         'terms_conditions',
         'notes',
         'cancellation_reason',
+        'created_by',
     ];
 
     protected function casts(): array
@@ -51,6 +52,11 @@ class Quotation extends Model
     public function purchaseOrders()
     {
         return $this->hasMany(PurchaseOrder::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }
 

@@ -10,42 +10,19 @@
     </div>
     <div class="d-flex gap-2">
         @if(($purchaseRequest->status === 'draft') && (auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing') || auth()->user()->hasRole('project_manager')))
-            <form method="POST" action="{{ route('purchase-requests.submit', $purchaseRequest) }}" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-primary" onclick="return confirm('Submit this purchase request for approval?')">
-                    <i class="bi bi-send"></i> Submit for Approval
-                </button>
-            </form>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#submitPRModal">
+                <i class="bi bi-send"></i> Submit for Approval
+            </button>
         @endif
         @if(($purchaseRequest->status === 'submitted') && auth()->user()->isAdmin())
-            <form method="POST" action="{{ route('purchase-requests.approve', $purchaseRequest) }}" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-success" onclick="return confirm('Approve this purchase request?')">
-                    <i class="bi bi-check-circle"></i> Approve
-                </button>
-            </form>
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approvePRModal">
+                <i class="bi bi-check-circle"></i> Approve
+            </button>
         @endif
         @if($purchaseRequest->status !== 'cancelled' && !$purchaseRequest->quotations()->exists() && (auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing') || auth()->user()->hasRole('project_manager')))
-        <form action="{{ route('purchase-requests.cancel', $purchaseRequest) }}" method="POST" class="d-inline" id="cancelPRForm">
-            @csrf
-            <input type="hidden" name="cancellation_reason" id="cancelPRReason">
-            <button type="button" class="btn btn-warning" onclick="cancelPR()">
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#cancelPRModal">
                 <i class="bi bi-x-circle"></i> Cancel
             </button>
-        </form>
-        <script>
-            function cancelPR() {
-                if (confirm('Are you sure you want to cancel this Purchase Request?')) {
-                    let reason = prompt('Please provide a reason for cancellation (minimum 10 characters):');
-                    if (reason && reason.trim().length >= 10) {
-                        document.getElementById('cancelPRReason').value = reason.trim();
-                        document.getElementById('cancelPRForm').submit();
-                    } else if (reason !== null) {
-                        alert('Cancellation reason must be at least 10 characters.');
-                    }
-                }
-            }
-        </script>
         @endif
         <a href="{{ route('purchase-requests.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back
@@ -85,12 +62,6 @@
                         <span class="info-label">Created At</span>
                         <span class="info-value">{{ $purchaseRequest->created_at->format('M d, Y') }}</span>
                     </div>
-                    @if($purchaseRequest->purpose)
-                    <div class="info-item full-width">
-                        <span class="info-label">Purpose</span>
-                        <span class="info-value">{{ $purchaseRequest->purpose }}</span>
-                    </div>
-                    @endif
                     @if($purchaseRequest->notes)
                     <div class="info-item full-width">
                         <span class="info-label">Notes</span>
@@ -151,8 +122,7 @@
                         <thead>
                             <tr>
                                 <th>Quotation #</th>
-                                <th>Supplier</th>
-                                <th>Total Amount</th>
+                                <th>Created By</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -161,15 +131,29 @@
                             @foreach($purchaseRequest->quotations as $quotation)
                                 <tr>
                                     <td><span class="text-muted font-monospace">{{ $quotation->quotation_number }}</span></td>
-                                    <td>{{ $quotation->supplier->name ?? 'N/A' }}</td>
-                                    <td><strong>₱{{ number_format($quotation->total_amount, 2) }}</strong></td>
+                                    <td>
+                                        @if($quotation->createdBy)
+                                            <span class="text-muted">
+                                                <i class="bi bi-person-plus"></i> {{ $quotation->createdBy->name }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">N/A</span>
+                                        @endif
+                                    </td>
                                     <td>
                                         <span class="status-text status-text-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'primary' : 'secondary') }}">
                                             {{ ucfirst($quotation->status) }}
                                         </span>
                                     </td>
                                     <td>
-                                        <a href="{{ route('quotations.show', $quotation) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                        @php
+                                            $supplierName = $quotation->supplier->name ?? 'N/A';
+                                            $tooltip = 'View';
+                                            if ($supplierName !== 'N/A') {
+                                                $tooltip .= ' - Supplier: ' . $supplierName;
+                                            }
+                                        @endphp
+                                        <a href="{{ route('quotations.show', $quotation) }}" class="btn btn-sm btn-action btn-view" title="{{ $tooltip }}" data-bs-toggle="tooltip" data-bs-placement="top">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                     </td>
@@ -539,5 +523,99 @@
     }
 </style>
 @endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Bootstrap tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+@endpush
+
+<!-- Submit Purchase Request Modal -->
+@if(($purchaseRequest->status === 'draft') && (auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing') || auth()->user()->hasRole('project_manager')))
+<div class="modal fade" id="submitPRModal" tabindex="-1" aria-labelledby="submitPRModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="submitPRModalLabel">Submit Purchase Request for Approval</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('purchase-requests.submit', $purchaseRequest) }}">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Submit this purchase request for approval?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-send"></i> Submit for Approval
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Approve Purchase Request Modal -->
+@if(($purchaseRequest->status === 'submitted') && auth()->user()->isAdmin())
+<div class="modal fade" id="approvePRModal" tabindex="-1" aria-labelledby="approvePRModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approvePRModalLabel">Approve Purchase Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('purchase-requests.approve', $purchaseRequest) }}">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Approve this purchase request?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Approve
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Cancel Purchase Request Modal -->
+@if($purchaseRequest->status !== 'cancelled' && !$purchaseRequest->quotations()->exists() && (auth()->user()->isAdmin() || auth()->user()->hasRole('purchasing') || auth()->user()->hasRole('project_manager')))
+<div class="modal fade" id="cancelPRModal" tabindex="-1" aria-labelledby="cancelPRModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelPRModalLabel">Cancel Purchase Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('purchase-requests.cancel', $purchaseRequest) }}" id="cancelPRForm">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Are you sure you want to cancel this Purchase Request?</p>
+                    <div class="mb-3">
+                        <label for="cancelPRReason" class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
+                        <textarea name="cancellation_reason" id="cancelPRReason" class="form-control" rows="4" placeholder="Please provide a reason for cancellation (minimum 10 characters)" required minlength="10"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-x-circle"></i> Cancel Purchase Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 @endsection

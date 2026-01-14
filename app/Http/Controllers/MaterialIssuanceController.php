@@ -5,16 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\MaterialIssuance;
 use App\Models\Project;
 use App\Services\StockService;
+use App\Services\ProjectHistoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class MaterialIssuanceController extends Controller
 {
     protected $stockService;
+    protected $historyService;
 
-    public function __construct(StockService $stockService)
+    public function __construct(StockService $stockService, ProjectHistoryService $historyService)
     {
         $this->stockService = $stockService;
+        $this->historyService = $historyService;
     }
 
     public function index(Request $request)
@@ -107,12 +110,34 @@ class MaterialIssuanceController extends Controller
             $issuance->items()->create($item);
         }
 
+        // Record project history if project is associated
+        if (isset($validated['project_id']) && $validated['project_id']) {
+            $project = Project::find($validated['project_id']);
+            if ($project) {
+                $this->historyService->recordRelatedEvent(
+                    $project,
+                    'material_issuance_created',
+                    'Material Issuance Created',
+                    "Material issuance {$issuance->issuance_number} was created for this project",
+                    MaterialIssuance::class,
+                    $issuance->id
+                );
+            }
+        }
+
         return redirect()->route('material-issuance.show', $issuance)->with('success', 'Material issuance created successfully.');
     }
 
     public function show(MaterialIssuance $materialIssuance)
     {
-        $materialIssuance->load(['project', 'items.inventoryItem', 'requestedBy', 'approvedBy', 'issuedBy']);
+        $materialIssuance->load([
+            'project', 
+            'items.inventoryItem', 
+            'requestedBy', 
+            'approvedBy', 
+            'issuedBy',
+            'receivedBy'
+        ]);
         return view('material_issuance.show', compact('materialIssuance'));
     }
 
@@ -135,6 +160,7 @@ class MaterialIssuanceController extends Controller
 
         $materialIssuance->update([
             'status' => 'issued',
+            'delivery_status' => 'pending', // Set to pending for warehouse validation
             'issued_by' => auth()->id(),
             'issued_at' => now(),
         ]);
@@ -144,7 +170,53 @@ class MaterialIssuanceController extends Controller
 
         $this->stockService->processMaterialIssuance($materialIssuance);
 
-        return redirect()->route('material-issuance.show', $materialIssuance)->with('success', 'Materials issued and stock updated.');
+        return redirect()->route('material-issuance.show', $materialIssuance)->with('success', 'Materials issued and stock updated. Waiting for warehouse to confirm delivery.');
+    }
+
+    public function markDelivered(Request $request, MaterialIssuance $materialIssuance)
+    {
+        if ($materialIssuance->status !== 'issued') {
+            return redirect()->back()->with('error', 'Only issued material issuances can be marked as delivered.');
+        }
+
+        if ($materialIssuance->delivery_status === 'received') {
+            return redirect()->back()->with('error', 'Material issuance has already been received by warehouse.');
+        }
+
+        $materialIssuance->update([
+            'delivery_status' => 'delivered',
+        ]);
+
+        return redirect()->route('material-issuance.show', $materialIssuance)->with('success', 'Material issuance marked as delivered. Waiting for warehouse confirmation.');
+    }
+
+    public function confirmReceived(Request $request, MaterialIssuance $materialIssuance)
+    {
+        $validated = $request->validate([
+            'received_date' => 'required|date',
+        ]);
+
+        if ($materialIssuance->status !== 'issued') {
+            return redirect()->back()->with('error', 'Only issued material issuances can be confirmed as received.');
+        }
+
+        if ($materialIssuance->delivery_status === 'received') {
+            return redirect()->back()->with('error', 'Material issuance has already been confirmed as received.');
+        }
+
+        // Only warehouse managers can confirm receipt
+        $user = auth()->user();
+        if (!$user->hasRole('warehouse_manager') && !$user->isAdmin()) {
+            return redirect()->back()->with('error', 'Only warehouse managers can confirm receipt of materials.');
+        }
+
+        $materialIssuance->update([
+            'delivery_status' => 'received',
+            'received_by' => auth()->id(),
+            'received_at' => \Carbon\Carbon::parse($validated['received_date']),
+        ]);
+
+        return redirect()->route('material-issuance.show', $materialIssuance)->with('success', 'Material receipt confirmed by warehouse. Items have been validated.');
     }
 
     public function cancel(Request $request, MaterialIssuance $materialIssuance)

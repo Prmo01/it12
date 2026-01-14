@@ -112,7 +112,7 @@
                                     <label class="form-label-custom">
                                         <i class="bi bi-123"></i> Return Qty
                                     </label>
-                                    <input type="number" step="0.01" min="0" max="{{ $available }}" name="items[{{ $itemIndex }}][quantity]" class="form-control-custom @error('items.'.$itemIndex.'.quantity') is-invalid @enderror" placeholder="0.00" value="{{ old('items.'.$itemIndex.'.quantity', 0) }}">
+                                    <input type="number" step="0.01" min="0" max="{{ $available }}" name="items[{{ $itemIndex }}][quantity]" class="form-control-custom quantity-input @error('items.'.$itemIndex.'.quantity') is-invalid @enderror" placeholder="0.00" value="{{ old('items.'.$itemIndex.'.quantity', 0) }}">
                                     @error('items.'.$itemIndex.'.quantity')
                                         <div class="invalid-feedback-custom">
                                             <i class="bi bi-exclamation-circle"></i> {{ $message }}
@@ -593,25 +593,73 @@
         });
         
         // Make item reason required when quantity > 0
-        document.querySelectorAll('.quantity-input').forEach(function(qtyInput) {
+        document.querySelectorAll('input[name*="[quantity]"]').forEach(function(qtyInput) {
             qtyInput.addEventListener('input', function() {
                 const row = this.closest('.item-row-modern');
+                if (!row) return;
+                
                 const reasonInput = row.querySelector('.item-reason-input');
                 const reasonRequired = row.querySelector('.item-reason-required');
                 const quantity = parseFloat(this.value) || 0;
                 
                 if (quantity > 0) {
-                    reasonInput.setAttribute('required', 'required');
-                    reasonRequired.style.display = 'inline';
+                    if (reasonInput) {
+                        reasonInput.setAttribute('required', 'required');
+                        reasonInput.setAttribute('minlength', '10');
+                    }
+                    if (reasonRequired) {
+                        reasonRequired.style.display = 'inline';
+                    }
                 } else {
-                    reasonInput.removeAttribute('required');
-                    reasonRequired.style.display = 'none';
+                    if (reasonInput) {
+                        reasonInput.removeAttribute('required');
+                        reasonInput.removeAttribute('minlength');
+                    }
+                    if (reasonRequired) {
+                        reasonRequired.style.display = 'none';
+                    }
                 }
             });
             
             // Trigger on page load to set initial state
             qtyInput.dispatchEvent(new Event('input'));
         });
+        
+        // Validate item reasons before form submission
+        const form = document.getElementById('grForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const quantityInputs = form.querySelectorAll('input[name*="[quantity]"]');
+                let hasValidationError = false;
+                
+                quantityInputs.forEach(function(qtyInput) {
+                    const quantity = parseFloat(qtyInput.value) || 0;
+                    if (quantity > 0) {
+                        const row = qtyInput.closest('.item-row-modern');
+                        if (row) {
+                            const reasonInput = row.querySelector('.item-reason-input');
+                            if (reasonInput) {
+                                const reason = reasonInput.value.trim();
+                                if (!reason || reason.length < 10) {
+                                    hasValidationError = true;
+                                    reasonInput.classList.add('is-invalid');
+                                    reasonInput.setCustomValidity('Item reason is required and must be at least 10 characters when returning items.');
+                                } else {
+                                    reasonInput.classList.remove('is-invalid');
+                                    reasonInput.setCustomValidity('');
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                if (hasValidationError) {
+                    e.preventDefault();
+                    alert('Please provide a reason (minimum 10 characters) for all items with return quantity greater than 0.');
+                    return false;
+                }
+            });
+        }
     });
 </script>
 @endpush

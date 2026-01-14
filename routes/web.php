@@ -202,6 +202,12 @@ Route::middleware('auth')->group(function () {
     Route::post('material-issuance/{materialIssuance}/issue', [MaterialIssuanceController::class, 'issue'])
         ->name('material-issuance.issue')
         ->middleware('role:admin,inventory_manager');
+    Route::post('material-issuance/{materialIssuance}/mark-delivered', [MaterialIssuanceController::class, 'markDelivered'])
+        ->name('material-issuance.mark-delivered')
+        ->middleware('role:admin,inventory_manager');
+    Route::post('material-issuance/{materialIssuance}/confirm-received', [MaterialIssuanceController::class, 'confirmReceived'])
+        ->name('material-issuance.confirm-received')
+        ->middleware('role:admin,warehouse_manager');
     Route::post('material-issuance/{materialIssuance}/cancel', [MaterialIssuanceController::class, 'cancel'])
         ->name('material-issuance.cancel')
         ->middleware('role:admin,inventory_manager');

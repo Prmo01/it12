@@ -5,16 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\ChangeOrder;
 use App\Models\Project;
 use App\Services\ProjectService;
+use App\Services\ProjectHistoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class ChangeOrderController extends Controller
 {
     protected $projectService;
+    protected $historyService;
 
-    public function __construct(ProjectService $projectService)
+    public function __construct(ProjectService $projectService, ProjectHistoryService $historyService)
     {
         $this->projectService = $projectService;
+        $this->historyService = $historyService;
     }
 
     public function index(Request $request)
@@ -86,6 +89,17 @@ class ChangeOrderController extends Controller
 
         $changeOrder = $this->projectService->createChangeOrder($validated);
 
+        // Record project history
+        $project = Project::findOrFail($validated['project_id']);
+        $this->historyService->recordRelatedEvent(
+            $project,
+            'change_order_created',
+            'Change Order Created',
+            "Change order {$changeOrder->change_order_number} was created for this project",
+            ChangeOrder::class,
+            $changeOrder->id
+        );
+
         return redirect()->route('change-orders.show', $changeOrder)->with('success', 'Change order created successfully.');
     }
 
@@ -98,6 +112,17 @@ class ChangeOrderController extends Controller
     public function approve(Request $request, ChangeOrder $changeOrder)
     {
         $this->projectService->approveChangeOrder($changeOrder, auth()->id());
+        
+        // Record project history
+        $this->historyService->recordRelatedEvent(
+            $changeOrder->project,
+            'change_order_approved',
+            'Change Order Approved',
+            "Change order {$changeOrder->change_order_number} was approved. Additional days: {$changeOrder->additional_days}",
+            ChangeOrder::class,
+            $changeOrder->id
+        );
+        
         return redirect()->route('change-orders.show', $changeOrder)->with('success', 'Change order approved.');
     }
 

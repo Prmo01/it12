@@ -10,12 +10,9 @@
     </div>
     <div class="d-flex gap-2">
         @if($project->status !== 'completed')
-        <form action="{{ route('projects.mark-as-done', $project) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to mark this project as done? This will move it to completed projects.');">
-            @csrf
-            <button type="submit" class="btn btn-success">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#markAsDoneModal">
                 <i class="bi bi-check-circle"></i> Mark as Done
             </button>
-        </form>
         @else
         <span class="badge badge-success d-flex align-items-center" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
             <i class="bi bi-check-circle-fill me-2"></i> Project Completed
@@ -28,8 +25,8 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-8">
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-9">
         <div class="info-card mb-4">
             <div class="info-card-header">
                 <h5 class="info-card-title"><i class="bi bi-info-circle"></i> Project Information</h5>
@@ -106,12 +103,14 @@
             </div>
         </div>
         
-        <div class="info-card">
+        <div class="info-card mb-4">
             <div class="info-card-header">
                 <h5 class="info-card-title"><i class="bi bi-file-earmark-diff"></i> Change Orders</h5>
+                @if($project->status !== 'completed')
                 <a href="{{ route('change-orders.create', ['project_id' => $project->id]) }}" class="btn btn-sm btn-primary">
                     <i class="bi bi-plus-circle"></i> Add Change Order
                 </a>
+                @endif
             </div>
             <div class="info-card-body">
                 @if($project->changeOrders->count() > 0)
@@ -151,12 +150,14 @@
             </div>
         </div>
 
-        <div class="info-card">
+        <div class="info-card mb-4">
             <div class="info-card-header">
                 <h5 class="info-card-title"><i class="bi bi-file-earmark-text"></i> Purchase Requests</h5>
+                @if($project->status !== 'completed')
                 <a href="{{ route('purchase-requests.create', ['project_id' => $project->id]) }}" class="btn btn-sm btn-primary">
                     <i class="bi bi-plus-circle"></i> New PR
                 </a>
+                @endif
             </div>
             <div class="info-card-body">
                 @if($project->purchaseRequests->count() > 0)
@@ -204,7 +205,7 @@
             </div>
         </div>
 
-        <div class="info-card">
+        <div class="info-card mb-4">
             <div class="info-card-header">
                 <h5 class="info-card-title"><i class="bi bi-file-earmark-check"></i> Quotations</h5>
             </div>
@@ -219,7 +220,7 @@
                                 <tr>
                                     <th>Quotation Number</th>
                                     <th>PR Number</th>
-                                    <th>Supplier</th>
+                                    <th>Created By</th>
                                     <th>Status</th>
                                     <th>Quotation Date</th>
                                     <th>Actions</th>
@@ -230,7 +231,15 @@
                                     <tr>
                                         <td><span class="text-muted font-monospace">{{ $quotation->quotation_number }}</span></td>
                                         <td><span class="font-monospace">{{ $quotation->purchaseRequest->pr_number ?? 'N/A' }}</span></td>
-                                        <td>{{ $quotation->supplier->name ?? 'N/A' }}</td>
+                                        <td>
+                                            @if($quotation->createdBy)
+                                                <span class="text-muted">
+                                                    <i class="bi bi-person-plus"></i> {{ $quotation->createdBy->name }}
+                                                </span>
+                                            @else
+                                                <span class="text-muted">N/A</span>
+                                            @endif
+                                        </td>
                                         <td>
                                             <span class="status-text status-text-{{ $quotation->status === 'accepted' ? 'success' : ($quotation->status === 'pending' ? 'warning' : 'secondary') }}">
                                                 {{ ucfirst($quotation->status) }}
@@ -238,7 +247,14 @@
                                         </td>
                                         <td><span class="text-muted">{{ $quotation->quotation_date->format('M d, Y') }}</span></td>
                                         <td>
-                                            <a href="{{ route('quotations.show', $quotation) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                            @php
+                                                $supplierName = $quotation->supplier->name ?? 'N/A';
+                                                $tooltip = 'View';
+                                                if ($supplierName !== 'N/A') {
+                                                    $tooltip .= ' - Supplier: ' . $supplierName;
+                                                }
+                                            @endphp
+                                            <a href="{{ route('quotations.show', $quotation) }}" class="btn btn-sm btn-action btn-view" title="{{ $tooltip }}" data-bs-toggle="tooltip" data-bs-placement="top">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                         </td>
@@ -257,7 +273,7 @@
             </div>
         </div>
 
-        <div class="info-card">
+        <div class="info-card mb-4">
             <div class="info-card-header">
                 <h5 class="info-card-title"><i class="bi bi-cart-check"></i> Purchase Orders</h5>
             </div>
@@ -272,7 +288,7 @@
                                 <tr>
                                     <th>PO Number</th>
                                     <th>PR Number</th>
-                                    <th>Supplier</th>
+                                    <th>Created By</th>
                                     <th>Status</th>
                                     <th>PO Date</th>
                                     <th>Actions</th>
@@ -283,7 +299,15 @@
                                     <tr>
                                         <td><span class="text-muted font-monospace">{{ $po->po_number }}</span></td>
                                         <td><span class="font-monospace">{{ $po->purchaseRequest->pr_number ?? 'N/A' }}</span></td>
-                                        <td>{{ $po->supplier->name ?? 'N/A' }}</td>
+                                        <td>
+                                            @if($po->createdBy)
+                                                <span class="text-muted">
+                                                    <i class="bi bi-person-plus"></i> {{ $po->createdBy->name }}
+                                                </span>
+                                            @else
+                                                <span class="text-muted">N/A</span>
+                                            @endif
+                                        </td>
                                         <td>
                                             <span class="status-text status-text-{{ $po->status === 'completed' ? 'success' : ($po->status === 'approved' ? 'primary' : ($po->status === 'pending' ? 'warning' : 'secondary')) }}">
                                                 {{ ucfirst($po->status) }}
@@ -291,7 +315,14 @@
                                         </td>
                                         <td><span class="text-muted">{{ $po->po_date->format('M d, Y') }}</span></td>
                                         <td>
-                                            <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-action btn-view" title="View">
+                                            @php
+                                                $supplierName = $po->supplier->name ?? 'N/A';
+                                                $tooltip = 'View';
+                                                if ($supplierName !== 'N/A') {
+                                                    $tooltip .= ' - Supplier: ' . $supplierName;
+                                                }
+                                            @endphp
+                                            <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-action btn-view" title="{{ $tooltip }}" data-bs-toggle="tooltip" data-bs-placement="top">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                         </td>
@@ -309,9 +340,51 @@
                 @endif
             </div>
         </div>
+
+        @if($project->history->count() > 0)
+        <div class="info-card mt-4">
+            <div class="info-card-header">
+                <h5 class="info-card-title"><i class="bi bi-clock-history"></i> Project Journey {{ $project->status === 'completed' ? '(Completed)' : '' }}</h5>
+            </div>
+            <div class="info-card-body">
+                <div class="project-timeline">
+                    @foreach($project->history as $event)
+                        <div class="timeline-item">
+                            <div class="timeline-marker">
+                                @if($event->event_type === 'created')
+                                    <i class="bi bi-plus-circle"></i>
+                                @elseif($event->event_type === 'status_changed')
+                                    <i class="bi bi-arrow-repeat"></i>
+                                @elseif($event->event_type === 'updated')
+                                    <i class="bi bi-pencil"></i>
+                                @else
+                                    <i class="bi bi-circle"></i>
+                                @endif
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    <span class="timeline-title">{{ $event->title }}</span>
+                                    <span class="timeline-date">{{ $event->created_at->format('M d, Y H:i') }}</span>
+                                </div>
+                                @if($event->description)
+                                    <p class="timeline-description">{{ $event->description }}</p>
+                                @endif
+                                @if($event->user)
+                                    <small class="timeline-user">
+                                        <i class="bi bi-person"></i> {{ $event->user->name }}
+                                    </small>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
     
-    <div class="col-md-4">
+    @if($project->status !== 'completed')
+    <div class="col-md-2 col-lg-3">
         <div class="quick-actions-card mb-4">
             <div class="quick-actions-header">
                 <h5 class="quick-actions-title"><i class="bi bi-lightning"></i> Quick Actions</h5>
@@ -340,6 +413,7 @@
             </div>
         </div>
     </div>
+    @endif
 </div>
 
 @push('styles')
@@ -617,6 +691,135 @@
         font-size: 0.75rem;
         font-weight: 600;
     }
+
+    .project-timeline {
+        position: relative;
+        padding-left: 3rem;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+        padding-left: 0;
+        margin-bottom: 1rem;
+    }
+
+    .timeline-item:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: -2.5rem;
+        top: 2rem;
+        bottom: -1.5rem;
+        width: 2px;
+        background: #e5e7eb;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -3rem;
+        top: 0;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        background: #2563eb;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+        z-index: 1;
+        flex-shrink: 0;
+    }
+
+    .timeline-content {
+        background: #f9fafb;
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        border: 1px solid #e5e7eb;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .timeline-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .timeline-title {
+        font-weight: 600;
+        color: #111827;
+        font-size: 0.9375rem;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .timeline-date {
+        font-size: 0.8125rem;
+        color: #6b7280;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .timeline-description {
+        color: #374151;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+        line-height: 1.5;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .timeline-user {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: #6b7280;
+        font-size: 0.8125rem;
+        margin-top: 0.25rem;
+    }
 </style>
 @endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Bootstrap tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+@endpush
+
+<!-- Mark Project as Done Modal -->
+@if($project->status !== 'completed')
+<div class="modal fade" id="markAsDoneModal" tabindex="-1" aria-labelledby="markAsDoneModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="markAsDoneModalLabel">Mark Project as Done</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('projects.mark-as-done', $project) }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Are you sure you want to mark this project as done? This will move it to completed projects.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Mark as Done
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
 @endsection

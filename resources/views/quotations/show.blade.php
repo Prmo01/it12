@@ -13,26 +13,9 @@
             <i class="bi bi-cart-check"></i> Create Purchase Order
         </a>
         @if($quotation->status !== 'rejected' && !$quotation->purchaseOrders()->where('status', '!=', 'cancelled')->exists())
-        <form action="{{ route('quotations.cancel', $quotation) }}" method="POST" class="d-inline" id="cancelQuotationForm">
-            @csrf
-            <input type="hidden" name="cancellation_reason" id="cancelQuotationReason">
-            <button type="button" class="btn btn-warning" onclick="cancelQuotation()">
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#cancelQuotationModal">
                 <i class="bi bi-x-circle"></i> Cancel
             </button>
-        </form>
-        <script>
-            function cancelQuotation() {
-                if (confirm('Are you sure you want to cancel this Quotation?')) {
-                    let reason = prompt('Please provide a reason for cancellation (minimum 10 characters):');
-                    if (reason && reason.trim().length >= 10) {
-                        document.getElementById('cancelQuotationReason').value = reason.trim();
-                        document.getElementById('cancelQuotationForm').submit();
-                    } else if (reason !== null) {
-                        alert('Cancellation reason must be at least 10 characters.');
-                    }
-                }
-            }
-        </script>
         @endif
         <a href="{{ route('quotations.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back
@@ -74,6 +57,22 @@
                         <span class="info-label">Purchase Request</span>
                         <span class="info-value font-monospace">{{ $quotation->purchaseRequest->pr_number ?? 'N/A' }}</span>
                     </div>
+                    @if($quotation->purchaseRequest && $quotation->purchaseRequest->requestedBy)
+                    <div class="info-item">
+                        <span class="info-label">Requested By</span>
+                        <span class="info-value">
+                            <i class="bi bi-person"></i> {{ $quotation->purchaseRequest->requestedBy->name }}
+                        </span>
+                    </div>
+                    @endif
+                    @if($quotation->createdBy)
+                    <div class="info-item">
+                        <span class="info-label">Created By</span>
+                        <span class="info-value">
+                            <i class="bi bi-person-plus"></i> {{ $quotation->createdBy->name }}
+                        </span>
+                    </div>
+                    @endif
                     <div class="info-item">
                         <span class="info-label">Quotation Date</span>
                         <span class="info-value">{{ $quotation->quotation_date->format('M d, Y') }}</span>
@@ -473,5 +472,34 @@
 </style>
 @endpush
 
+<!-- Cancel Quotation Modal -->
+@if($quotation->status !== 'rejected' && !$quotation->purchaseOrders()->where('status', '!=', 'cancelled')->exists())
+<div class="modal fade" id="cancelQuotationModal" tabindex="-1" aria-labelledby="cancelQuotationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelQuotationModalLabel">Cancel Quotation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('quotations.cancel', $quotation) }}" id="cancelQuotationForm">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Are you sure you want to cancel this Quotation?</p>
+                    <div class="mb-3">
+                        <label for="cancelQuotationReason" class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
+                        <textarea name="cancellation_reason" id="cancelQuotationReason" class="form-control" rows="4" placeholder="Please provide a reason for cancellation (minimum 10 characters)" required minlength="10"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-x-circle"></i> Cancel Quotation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 @endsection

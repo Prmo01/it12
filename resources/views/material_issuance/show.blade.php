@@ -10,42 +10,29 @@
     </div>
     <div class="d-flex gap-2">
         @if($materialIssuance->status === 'draft')
-            <form method="POST" action="{{ route('material-issuance.approve', $materialIssuance) }}" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-success">
-                    <i class="bi bi-check-circle"></i> Approve
-                </button>
-            </form>
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveMIModal">
+                <i class="bi bi-check-circle"></i> Approve
+            </button>
         @endif
         @if($materialIssuance->status === 'approved')
-            <form method="POST" action="{{ route('material-issuance.issue', $materialIssuance) }}" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-box-arrow-up"></i> Issue Goods
-                </button>
-            </form>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#issueMIModal">
+                <i class="bi bi-box-arrow-up"></i> Issue Goods
+            </button>
+        @endif
+        @if($materialIssuance->status === 'issued' && $materialIssuance->delivery_status === 'pending' && (auth()->user()->hasRole('inventory_manager') || auth()->user()->isAdmin()))
+            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#markDeliveredModal">
+                <i class="bi bi-truck"></i> Mark as Delivered
+            </button>
+        @endif
+        @if($materialIssuance->status === 'issued' && in_array($materialIssuance->delivery_status, ['pending', 'delivered']) && (auth()->user()->hasRole('warehouse_manager') || auth()->user()->isAdmin()))
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmReceivedModal">
+                <i class="bi bi-check-circle"></i> Confirm Received
+            </button>
         @endif
         @if($materialIssuance->status !== 'cancelled' && $materialIssuance->status !== 'issued')
-        <form action="{{ route('material-issuance.cancel', $materialIssuance) }}" method="POST" class="d-inline" id="cancelMIForm">
-            @csrf
-            <input type="hidden" name="cancellation_reason" id="cancelMIReason">
-            <button type="button" class="btn btn-warning" onclick="cancelMI()">
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#cancelMIModal">
                 <i class="bi bi-x-circle"></i> Cancel
             </button>
-        </form>
-        <script>
-            function cancelMI() {
-                if (confirm('Are you sure you want to cancel this Material Issuance?')) {
-                    let reason = prompt('Please provide a reason for cancellation (minimum 10 characters):');
-                    if (reason && reason.trim().length >= 10) {
-                        document.getElementById('cancelMIReason').value = reason.trim();
-                        document.getElementById('cancelMIForm').submit();
-                    } else if (reason !== null) {
-                        alert('Cancellation reason must be at least 10 characters.');
-                    }
-                }
-            }
-        </script>
         @endif
         <a href="{{ route('material-issuance.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back
@@ -91,6 +78,67 @@
                         <span class="info-label">Issuance Date</span>
                         <span class="info-value">{{ $materialIssuance->issuance_date->format('M d, Y') }}</span>
                     </div>
+                    @if($materialIssuance->requestedBy)
+                    <div class="info-item">
+                        <span class="info-label">Requested By</span>
+                        <span class="info-value">
+                            <i class="bi bi-person"></i> {{ $materialIssuance->requestedBy->name }}
+                        </span>
+                    </div>
+                    @endif
+                    @if($materialIssuance->approvedBy)
+                    <div class="info-item">
+                        <span class="info-label">Approved By</span>
+                        <span class="info-value">
+                            <i class="bi bi-check-circle"></i> {{ $materialIssuance->approvedBy->name }}
+                            @if($materialIssuance->approved_at)
+                                <small class="text-muted">({{ $materialIssuance->approved_at->format('M d, Y H:i') }})</small>
+                            @endif
+                        </span>
+                    </div>
+                    @endif
+                    @if($materialIssuance->issuedBy)
+                    <div class="info-item">
+                        <span class="info-label">Issued By</span>
+                        <span class="info-value">
+                            <i class="bi bi-box-arrow-up"></i> {{ $materialIssuance->issuedBy->name }}
+                            @if($materialIssuance->issued_at)
+                                <small class="text-muted">({{ $materialIssuance->issued_at->format('M d, Y H:i') }})</small>
+                            @endif
+                        </span>
+                    </div>
+                    @endif
+                    @if($materialIssuance->status === 'issued')
+                    <div class="info-item">
+                        <span class="info-label">Delivery Status</span>
+                        <span class="info-value">
+                            @if($materialIssuance->delivery_status === 'received')
+                                <span class="badge badge-success">
+                                    <i class="bi bi-check-circle"></i> Received by Warehouse
+                                </span>
+                            @elseif($materialIssuance->delivery_status === 'delivered')
+                                <span class="badge badge-primary">
+                                    <i class="bi bi-truck"></i> Delivered
+                                </span>
+                            @else
+                                <span class="badge badge-warning">
+                                    <i class="bi bi-clock"></i> Pending Delivery
+                                </span>
+                            @endif
+                        </span>
+                    </div>
+                    @endif
+                    @if($materialIssuance->receivedBy)
+                    <div class="info-item">
+                        <span class="info-label">Received By (Warehouse)</span>
+                        <span class="info-value">
+                            <i class="bi bi-person-check"></i> {{ $materialIssuance->receivedBy->name }}
+                            @if($materialIssuance->received_at)
+                                <small class="text-muted">({{ $materialIssuance->received_at->format('M d, Y H:i') }})</small>
+                            @endif
+                        </span>
+                    </div>
+                    @endif
                     @if($materialIssuance->purpose)
                     <div class="info-item full-width">
                         <span class="info-label">Purpose</span>
@@ -558,5 +606,147 @@
 </style>
 @endpush
 
+<!-- Approve Material Issuance Modal -->
+@if($materialIssuance->status === 'draft')
+<div class="modal fade" id="approveMIModal" tabindex="-1" aria-labelledby="approveMIModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approveMIModalLabel">Approve Material Issuance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('material-issuance.approve', $materialIssuance) }}">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Are you sure you want to approve this material issuance?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Approve
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Issue Material Issuance Modal -->
+@if($materialIssuance->status === 'approved')
+<div class="modal fade" id="issueMIModal" tabindex="-1" aria-labelledby="issueMIModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="issueMIModalLabel">Issue Goods</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('material-issuance.issue', $materialIssuance) }}">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Are you sure you want to issue these materials? This will update the stock levels.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-up"></i> Issue Goods
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Cancel Material Issuance Modal -->
+@if($materialIssuance->status !== 'cancelled' && $materialIssuance->status !== 'issued')
+<div class="modal fade" id="cancelMIModal" tabindex="-1" aria-labelledby="cancelMIModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelMIModalLabel">Cancel Material Issuance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('material-issuance.cancel', $materialIssuance) }}" id="cancelMIForm">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Are you sure you want to cancel this Material Issuance?</p>
+                    <div class="mb-3">
+                        <label for="cancelMIReason" class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
+                        <textarea name="cancellation_reason" id="cancelMIReason" class="form-control" rows="4" placeholder="Please provide a reason for cancellation (minimum 10 characters)" required minlength="10"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-x-circle"></i> Cancel Material Issuance
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Mark as Delivered Modal -->
+@if($materialIssuance->status === 'issued' && $materialIssuance->delivery_status === 'pending' && (auth()->user()->hasRole('inventory_manager') || auth()->user()->isAdmin()))
+<div class="modal fade" id="markDeliveredModal" tabindex="-1" aria-labelledby="markDeliveredModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="markDeliveredModalLabel">Mark as Delivered</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('material-issuance.mark-delivered', $materialIssuance) }}">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Mark this material issuance as delivered to the warehouse?</p>
+                    <p class="mb-0"><strong>Note:</strong> This will change the status to "Delivered" and wait for warehouse confirmation.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="bi bi-truck"></i> Mark as Delivered
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Confirm Received Modal -->
+@if($materialIssuance->status === 'issued' && in_array($materialIssuance->delivery_status, ['pending', 'delivered']) && (auth()->user()->hasRole('warehouse_manager') || auth()->user()->isAdmin()))
+<div class="modal fade" id="confirmReceivedModal" tabindex="-1" aria-labelledby="confirmReceivedModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmReceivedModalLabel">Confirm Receipt from Inventory</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('material-issuance.confirm-received', $materialIssuance) }}">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Please confirm that the warehouse has received the materials from inventory issuance:</p>
+                    <div class="mb-3">
+                        <label for="receivedDate" class="form-label">Received Date <span class="text-danger">*</span></label>
+                        <input type="date" name="received_date" id="receivedDate" class="form-control" value="{{ date('Y-m-d') }}" required>
+                        <small class="form-text">Date when materials were physically received by warehouse</small>
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> <strong>Validation:</strong> By confirming receipt, you verify that all items listed in this issuance have been received and validated.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Confirm Received
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 @endsection

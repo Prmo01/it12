@@ -10,37 +10,17 @@
     </div>
     <div class="d-flex gap-2">
         @if($changeOrder->status === 'pending')
-            <form method="POST" action="{{ route('change-orders.approve', $changeOrder) }}" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-success">
-                    <i class="bi bi-check-circle"></i> Approve
-                </button>
-            </form>
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveCOModal">
+                <i class="bi bi-check-circle"></i> Approve
+            </button>
             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
                 <i class="bi bi-x-circle"></i> Reject
             </button>
         @endif
         @if($changeOrder->status !== 'cancelled' && $changeOrder->status !== 'approved')
-        <form action="{{ route('change-orders.cancel', $changeOrder) }}" method="POST" class="d-inline" id="cancelCOForm">
-            @csrf
-            <input type="hidden" name="cancellation_reason" id="cancelCOReason">
-            <button type="button" class="btn btn-warning" onclick="cancelCO()">
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#cancelCOModal">
                 <i class="bi bi-x-circle"></i> Cancel
             </button>
-        </form>
-        <script>
-            function cancelCO() {
-                if (confirm('Are you sure you want to cancel this Change Order?')) {
-                    let reason = prompt('Please provide a reason for cancellation (minimum 10 characters):');
-                    if (reason && reason.trim().length >= 10) {
-                        document.getElementById('cancelCOReason').value = reason.trim();
-                        document.getElementById('cancelCOForm').submit();
-                    } else if (reason !== null) {
-                        alert('Cancellation reason must be at least 10 characters.');
-                    }
-                }
-            }
-        </script>
         @endif
         <a href="{{ route('change-orders.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back
@@ -409,5 +389,61 @@
     
 </style>
 @endpush
+
+<!-- Approve Change Order Modal -->
+@if($changeOrder->status === 'pending')
+<div class="modal fade" id="approveCOModal" tabindex="-1" aria-labelledby="approveCOModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approveCOModalLabel">Approve Additional Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('change-orders.approve', $changeOrder) }}">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Are you sure you want to approve this additional project?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Approve
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Cancel Change Order Modal -->
+@if($changeOrder->status !== 'cancelled' && $changeOrder->status !== 'approved')
+<div class="modal fade" id="cancelCOModal" tabindex="-1" aria-labelledby="cancelCOModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelCOModalLabel">Cancel Additional Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('change-orders.cancel', $changeOrder) }}" id="cancelCOForm">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Are you sure you want to cancel this Change Order?</p>
+                    <div class="mb-3">
+                        <label for="cancelCOReason" class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
+                        <textarea name="cancellation_reason" id="cancelCOReason" class="form-control" rows="4" placeholder="Please provide a reason for cancellation (minimum 10 characters)" required minlength="10"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-x-circle"></i> Cancel Change Order
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 @endsection

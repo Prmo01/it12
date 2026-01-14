@@ -80,5 +80,10 @@ class Project extends Model
             'id' // Local key on purchase_requests table
         );
     }
+
+    public function history()
+    {
+        return $this->hasMany(ProjectHistory::class)->orderBy('created_at', 'desc');
+    }
 }
 

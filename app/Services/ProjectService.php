@@ -8,10 +8,18 @@ use Illuminate\Support\Facades\DB;
 
 class ProjectService
 {
+    protected $historyService;
+
+    public function __construct(ProjectHistoryService $historyService)
+    {
+        $this->historyService = $historyService;
+    }
+
     public function createProject(array $data): Project
     {
         return DB::transaction(function () use ($data) {
             $project = Project::create($data);
+            $this->historyService->recordProjectCreated($project);
             return $project;
         });
     }
@@ -19,7 +27,27 @@ class ProjectService
     public function updateProject(Project $project, array $data): Project
     {
         return DB::transaction(function () use ($project, $data) {
+            $oldStatus = $project->status;
+            $changes = [];
+            
+            foreach ($data as $key => $value) {
+                if ($project->$key != $value) {
+                    $changes[$key] = $value;
+                }
+            }
+            
             $project->update($data);
+            
+            // Record status change if status was updated
+            if (isset($data['status']) && $oldStatus !== $data['status']) {
+                $this->historyService->recordStatusChange($project, $oldStatus, $data['status']);
+            }
+            
+            // Record other updates
+            if (!empty($changes)) {
+                $this->historyService->recordProjectUpdated($project, $changes);
+            }
+            
             return $project->fresh();
         });
     }
@@ -60,6 +88,11 @@ class ProjectService
 
             return $changeOrder->fresh();
         });
+    }
+
+    public function getHistoryService(): ProjectHistoryService
+    {
+        return $this->historyService;
     }
 }
 

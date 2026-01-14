@@ -15,26 +15,9 @@
             </button>
         @endif
         @if($goodsReceipt->status !== 'cancelled' && $goodsReceipt->status !== 'approved')
-        <form action="{{ route('goods-receipts.cancel', $goodsReceipt) }}" method="POST" class="d-inline" id="cancelGRForm">
-            @csrf
-            <input type="hidden" name="cancellation_reason" id="cancelGRReason">
-            <button type="button" class="btn btn-warning" onclick="cancelGR()">
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#cancelGRModal">
                 <i class="bi bi-x-circle"></i> Cancel
             </button>
-        </form>
-        <script>
-            function cancelGR() {
-                if (confirm('Are you sure you want to cancel this Goods Receipt?')) {
-                    let reason = prompt('Please provide a reason for cancellation (minimum 10 characters):');
-                    if (reason && reason.trim().length >= 10) {
-                        document.getElementById('cancelGRReason').value = reason.trim();
-                        document.getElementById('cancelGRForm').submit();
-                    } else if (reason !== null) {
-                        alert('Cancellation reason must be at least 10 characters.');
-                    }
-                }
-            }
-        </script>
         @endif
         <a href="{{ route('goods-receipts.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back
@@ -486,6 +469,36 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success">
                         <i class="bi bi-check-circle"></i> Approve & Update Stock
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Cancel Goods Receipt Modal -->
+@if($goodsReceipt->status !== 'cancelled' && $goodsReceipt->status !== 'approved')
+<div class="modal fade" id="cancelGRModal" tabindex="-1" aria-labelledby="cancelGRModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelGRModalLabel">Cancel Goods Receipt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('goods-receipts.cancel', $goodsReceipt) }}" id="cancelGRForm">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Are you sure you want to cancel this Goods Receipt?</p>
+                    <div class="mb-3">
+                        <label for="cancelGRReason" class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
+                        <textarea name="cancellation_reason" id="cancelGRReason" class="form-control" rows="4" placeholder="Please provide a reason for cancellation (minimum 10 characters)" required minlength="10"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-x-circle"></i> Cancel Goods Receipt
                     </button>
                 </div>
             </form>

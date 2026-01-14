@@ -17,12 +17,15 @@ class MaterialIssuance extends Model
         'issuance_type',
         'issuance_date',
         'status',
+        'delivery_status',
         'purpose',
         'requested_by',
         'approved_by',
         'issued_by',
+        'received_by',
         'approved_at',
         'issued_at',
+        'received_at',
         'notes',
         'cancellation_reason',
     ];
@@ -54,6 +57,11 @@ class MaterialIssuance extends Model
     public function issuedBy()
     {
         return $this->belongsTo(User::class, 'issued_by');
+    }
+
+    public function receivedBy()
+    {
+        return $this->belongsTo(User::class, 'received_by');
     }
 
     public function items()

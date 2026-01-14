@@ -20,7 +20,7 @@ class QuotationController extends Controller
 
     public function index(Request $request)
     {
-        $query = Quotation::with(['purchaseRequest', 'items.supplier']);
+        $query = Quotation::with(['purchaseRequest.requestedBy', 'items.supplier', 'createdBy']);
 
         if ($request->has('purchase_request_id') && $request->purchase_request_id != '') {
             $query->where('purchase_request_id', $request->purchase_request_id);
@@ -114,7 +114,12 @@ class QuotationController extends Controller
 
     public function show(Quotation $quotation)
     {
-        $quotation->load(['purchaseRequest', 'items.inventoryItem', 'items.supplier']);
+        $quotation->load([
+            'purchaseRequest.requestedBy', 
+            'items.inventoryItem', 
+            'items.supplier',
+            'createdBy'
+        ]);
         return view('quotations.show', compact('quotation'));
     }
 

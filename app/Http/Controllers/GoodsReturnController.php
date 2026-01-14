@@ -144,7 +144,7 @@ class GoodsReturnController extends Controller
         }
 
         $validated['return_number'] = 'RT-' . strtoupper(Str::random(8));
-        $validated['status'] = 'draft';
+        $validated['status'] = 'pending'; // Set to pending for approval workflow
         $validated['returned_by'] = auth()->id();
 
         // Get project_code from goods_receipt
@@ -163,28 +163,55 @@ class GoodsReturnController extends Controller
             $return->items()->create($item);
         }
 
-        return redirect()->route('goods-returns.show', $return)->with('success', 'Goods return created successfully.');
+        return redirect()->route('goods-returns.show', $return)->with('success', 'Goods return created successfully. Waiting for approval to update stock.');
     }
 
     public function show(GoodsReturn $goodsReturn)
     {
-        $goodsReturn->load(['goodsReceipt.purchaseOrder', 'items.inventoryItem', 'returnedBy', 'approvedBy']);
+        $goodsReturn->load([
+            'goodsReceipt.purchaseOrder.supplier', 
+            'items.inventoryItem', 
+            'returnedBy', 
+            'approvedBy'
+        ]);
         return view('goods_returns.show', compact('goodsReturn'));
     }
 
     public function approve(Request $request, GoodsReturn $goodsReturn)
     {
+        // Check if goods return is in a valid state for approval
+        if (!in_array($goodsReturn->status, ['draft', 'pending'])) {
+            return redirect()->back()->with('error', 'Only draft or pending goods returns can be approved.');
+        }
+
+        // Verify user has permission (inventory manager or admin)
+        $user = auth()->user();
+        if (!$user->hasRole('inventory_manager') && !$user->isAdmin()) {
+            return redirect()->back()->with('error', 'Only inventory managers can approve goods returns and update stock.');
+        }
+
+        // Reload items to ensure we have the latest data
+        $goodsReturn->load('items');
+
+        // Validate that all items have quantities > 0
+        if ($goodsReturn->items->isEmpty()) {
+            return redirect()->back()->with('error', 'Cannot approve goods return with no items.');
+        }
+
         $goodsReturn->update([
             'status' => 'approved',
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
 
+        // Process stock updates for each returned item
         foreach ($goodsReturn->items as $item) {
-            $this->stockService->processGoodsReturn($item->inventory_item_id, $item->quantity, $goodsReturn->id);
+            if ($item->quantity > 0) {
+                $this->stockService->processGoodsReturn($item->inventory_item_id, $item->quantity, $goodsReturn->id);
+            }
         }
 
-        return redirect()->route('goods-returns.show', $goodsReturn)->with('success', 'Goods return approved and stock updated.');
+        return redirect()->route('goods-returns.show', $goodsReturn)->with('success', 'Goods return approved and stock updated. Items have been returned to supplier.');
     }
 
     public function cancel(Request $request, GoodsReturn $goodsReturn)

@@ -5,16 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\PurchaseRequest;
 use App\Models\Project;
 use App\Services\ProcurementService;
+use App\Services\ProjectHistoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class MaterialRequisitionController extends Controller
 {
     protected $procurementService;
+    protected $historyService;
 
-    public function __construct(ProcurementService $procurementService)
+    public function __construct(ProcurementService $procurementService, ProjectHistoryService $historyService)
     {
         $this->procurementService = $procurementService;
+        $this->historyService = $historyService;
     }
 
     public function index(Request $request)
@@ -110,6 +113,17 @@ class MaterialRequisitionController extends Controller
 
         $pr = $this->procurementService->createPurchaseRequest($validated);
 
+        // Record project history
+        $project = Project::findOrFail($validated['project_id']);
+        $this->historyService->recordRelatedEvent(
+            $project,
+            'purchase_request_created',
+            'Purchase Request Created',
+            "Purchase request {$pr->pr_number} was created for this project",
+            PurchaseRequest::class,
+            $pr->id
+        );
+
         return redirect()->route('purchase-requests.show', $pr)->with('success', 'Purchase request created successfully.');
     }
 
@@ -120,7 +134,8 @@ class MaterialRequisitionController extends Controller
             'requestedBy', 
             'approvedBy', 
             'items.inventoryItem',
-            'quotations.supplier'
+            'quotations.supplier',
+            'quotations.createdBy'
         ]);
         return view('purchase_requests.show', compact('purchaseRequest'));
     }

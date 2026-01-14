@@ -55,6 +55,7 @@ class ProcurementService
 
             $data['quotation_number'] = $quotationNumber;
             $data['status'] = 'pending';
+            $data['created_by'] = auth()->id(); // Track who created the quotation
 
             // Get project_code from purchase_request
             if (isset($data['purchase_request_id'])) {

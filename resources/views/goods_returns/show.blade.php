@@ -10,34 +10,14 @@
     </div>
     <div class="d-flex gap-2">
         @if(in_array($goodsReturn->status, ['draft', 'pending']))
-            <form method="POST" action="{{ route('goods-returns.approve', $goodsReturn) }}" class="d-inline">
-                @csrf
-                <button type="submit" class="btn btn-success">
-                    <i class="bi bi-check-circle"></i> Approve & Update Stock
-                </button>
-            </form>
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveReturnModal">
+                <i class="bi bi-check-circle"></i> Approve & Update Stock
+            </button>
         @endif
         @if($goodsReturn->status !== 'cancelled' && $goodsReturn->status !== 'approved')
-        <form action="{{ route('goods-returns.cancel', $goodsReturn) }}" method="POST" class="d-inline" id="cancelReturnForm">
-            @csrf
-            <input type="hidden" name="cancellation_reason" id="cancelReturnReason">
-            <button type="button" class="btn btn-warning" onclick="cancelReturn()">
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#cancelReturnModal">
                 <i class="bi bi-x-circle"></i> Cancel
             </button>
-        </form>
-        <script>
-            function cancelReturn() {
-                if (confirm('Are you sure you want to cancel this Goods Return?')) {
-                    let reason = prompt('Please provide a reason for cancellation (minimum 10 characters):');
-                    if (reason && reason.trim().length >= 10) {
-                        document.getElementById('cancelReturnReason').value = reason.trim();
-                        document.getElementById('cancelReturnForm').submit();
-                    } else if (reason !== null) {
-                        alert('Cancellation reason must be at least 10 characters.');
-                    }
-                }
-            }
-        </script>
         @endif
         <a href="{{ route('goods-returns.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back
@@ -79,6 +59,14 @@
                         <span class="info-label">Goods Receipt</span>
                         <span class="info-value font-monospace">{{ $goodsReturn->goodsReceipt->gr_number }}</span>
                     </div>
+                    @if($goodsReturn->goodsReceipt->purchaseOrder && $goodsReturn->goodsReceipt->purchaseOrder->supplier)
+                    <div class="info-item">
+                        <span class="info-label">Supplier</span>
+                        <span class="info-value">
+                            <i class="bi bi-truck"></i> {{ $goodsReturn->goodsReceipt->purchaseOrder->supplier->name }}
+                        </span>
+                    </div>
+                    @endif
                     <div class="info-item">
                         <span class="info-label">Return Date</span>
                         <span class="info-value">{{ $goodsReturn->return_date ? $goodsReturn->return_date->format('M d, Y') : 'N/A' }}</span>
@@ -87,6 +75,18 @@
                         <span class="info-label">Returned By</span>
                         <span class="info-value">{{ $goodsReturn->returnedBy->name ?? 'N/A' }}</span>
                     </div>
+                    @if($goodsReturn->approvedBy)
+                    <div class="info-item">
+                        <span class="info-label">Approved By</span>
+                        <span class="info-value">{{ $goodsReturn->approvedBy->name }}</span>
+                    </div>
+                    @endif
+                    @if($goodsReturn->approved_at)
+                    <div class="info-item">
+                        <span class="info-label">Approved At</span>
+                        <span class="info-value">{{ $goodsReturn->approved_at->format('M d, Y H:i') }}</span>
+                    </div>
+                    @endif
                     <div class="info-item full-width">
                         <span class="info-label">Reason</span>
                         <span class="info-value">{{ $goodsReturn->reason }}</span>
@@ -148,7 +148,7 @@
                     <i class="bi bi-check-circle"></i>
                     <div>
                         <strong>Approved</strong>
-                        <p class="mb-0">Stock levels have been updated.</p>
+                        <p class="mb-0">Items have been returned to supplier. Stock levels have been updated.</p>
                     </div>
                 </div>
                 @else
@@ -156,7 +156,7 @@
                     <i class="bi bi-info-circle"></i>
                     <div>
                         <strong>Pending Approval</strong>
-                        <p class="mb-0">Approve this return to update inventory stock levels.</p>
+                        <p class="mb-0">Approve this return to send items back to supplier and update inventory stock levels.</p>
                     </div>
                 </div>
                 @endif
@@ -176,6 +176,14 @@
                     <span class="related-label">Receipt Date</span>
                     <span class="related-value">{{ $goodsReturn->goodsReceipt->gr_date ? $goodsReturn->goodsReceipt->gr_date->format('M d, Y') : 'N/A' }}</span>
                 </div>
+                @if($goodsReturn->goodsReceipt->purchaseOrder && $goodsReturn->goodsReceipt->purchaseOrder->supplier)
+                <div class="related-item">
+                    <span class="related-label">Supplier</span>
+                    <span class="related-value">
+                        <i class="bi bi-truck"></i> {{ $goodsReturn->goodsReceipt->purchaseOrder->supplier->name }}
+                    </span>
+                </div>
+                @endif
                 <a href="{{ route('goods-receipts.show', $goodsReturn->goodsReceipt) }}" class="btn btn-sm btn-outline-primary w-100 mt-2">
                     <i class="bi bi-eye"></i> View Goods Receipt
                 </a>
@@ -419,5 +427,67 @@
     
 </style>
 @endpush
+
+<!-- Approve Goods Return Modal -->
+@if(in_array($goodsReturn->status, ['draft', 'pending']))
+<div class="modal fade" id="approveReturnModal" tabindex="-1" aria-labelledby="approveReturnModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approveReturnModalLabel">Approve Goods Return & Update Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('goods-returns.approve', $goodsReturn) }}">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Please review the items to be returned to supplier before approving:</p>
+                    @if($goodsReturn->goodsReceipt->purchaseOrder && $goodsReturn->goodsReceipt->purchaseOrder->supplier)
+                        <div class="alert alert-info mb-3">
+                            <strong>Supplier:</strong> {{ $goodsReturn->goodsReceipt->purchaseOrder->supplier->name }}
+                        </div>
+                    @endif
+                    <p class="mb-0"><strong>Note:</strong> Approving this return will update inventory stock levels by reducing the quantities of returned items.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Approve & Update Stock
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Cancel Goods Return Modal -->
+@if($goodsReturn->status !== 'cancelled' && $goodsReturn->status !== 'approved')
+<div class="modal fade" id="cancelReturnModal" tabindex="-1" aria-labelledby="cancelReturnModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelReturnModalLabel">Cancel Goods Return</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('goods-returns.cancel', $goodsReturn) }}" id="cancelReturnForm">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Are you sure you want to cancel this Goods Return?</p>
+                    <div class="mb-3">
+                        <label for="cancelReturnReason" class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
+                        <textarea name="cancellation_reason" id="cancelReturnReason" class="form-control" rows="4" placeholder="Please provide a reason for cancellation (minimum 10 characters)" required minlength="10"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-x-circle"></i> Cancel Goods Return
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 @endsection

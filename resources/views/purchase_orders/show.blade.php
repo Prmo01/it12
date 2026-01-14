@@ -10,37 +10,17 @@
     </div>
     <div class="d-flex gap-2">
         @if(auth()->user()->isAdmin() && in_array($purchaseOrder->status, ['draft', 'pending']))
-        <form method="POST" action="{{ route('purchase-orders.approve', $purchaseOrder) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to approve this purchase order?');">
-            @csrf
-            <button type="submit" class="btn btn-success">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approvePOModal">
                 <i class="bi bi-check-circle"></i> Approve
             </button>
-        </form>
         @endif
         <a href="{{ route('purchase-orders.print', $purchaseOrder) }}" class="btn btn-secondary">
             <i class="bi bi-printer"></i> Print
         </a>
         @if($purchaseOrder->status !== 'cancelled')
-        <form action="{{ route('purchase-orders.cancel', $purchaseOrder) }}" method="POST" class="d-inline" id="cancelPOForm">
-            @csrf
-            <input type="hidden" name="cancellation_reason" id="cancelPOReason">
-            <button type="button" class="btn btn-warning" onclick="cancelPO()">
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#cancelPOModal">
                 <i class="bi bi-x-circle"></i> Cancel
             </button>
-        </form>
-        <script>
-            function cancelPO() {
-                if (confirm('Are you sure you want to cancel this Purchase Order?')) {
-                    let reason = prompt('Please provide a reason for cancellation (minimum 10 characters):');
-                    if (reason && reason.trim().length >= 10) {
-                        document.getElementById('cancelPOReason').value = reason.trim();
-                        document.getElementById('cancelPOForm').submit();
-                    } else if (reason !== null) {
-                        alert('Cancellation reason must be at least 10 characters.');
-                    }
-                }
-            }
-        </script>
         @endif
         <a href="{{ route('purchase-orders.index') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back
@@ -575,5 +555,60 @@
 </style>
 @endpush
 
+<!-- Approve Purchase Order Modal -->
+@if(auth()->user()->isAdmin() && in_array($purchaseOrder->status, ['draft', 'pending']))
+<div class="modal fade" id="approvePOModal" tabindex="-1" aria-labelledby="approvePOModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approvePOModalLabel">Approve Purchase Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('purchase-orders.approve', $purchaseOrder) }}">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Are you sure you want to approve this purchase order?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Approve
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Cancel Purchase Order Modal -->
+@if($purchaseOrder->status !== 'cancelled')
+<div class="modal fade" id="cancelPOModal" tabindex="-1" aria-labelledby="cancelPOModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelPOModalLabel">Cancel Purchase Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('purchase-orders.cancel', $purchaseOrder) }}" id="cancelPOForm">
+                @csrf
+                <div class="modal-body">
+                    <p class="mb-3">Are you sure you want to cancel this Purchase Order?</p>
+                    <div class="mb-3">
+                        <label for="cancelPOReason" class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
+                        <textarea name="cancellation_reason" id="cancelPOReason" class="form-control" rows="4" placeholder="Please provide a reason for cancellation (minimum 10 characters)" required minlength="10"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-x-circle"></i> Cancel Purchase Order
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 @endsection
