@@ -80,8 +80,11 @@
                         <span class="info-label">Progress</span>
                         <div class="progress-wrapper">
                             <div class="progress-modern">
-                                <div class="progress-bar-modern" style="width: {{ $project->progress_percentage ?? 0 }}%">
-                                    <span class="progress-text">{{ $project->progress_percentage ?? 0 }}%</span>
+                                @php
+                                    $progress = $project->status === 'completed' ? 100 : ($project->progress_percentage ?? 0);
+                                @endphp
+                                <div class="progress-bar-modern" style="width: {{ $progress }}%">
+                                    <span class="progress-text">{{ $progress }}%</span>
                                 </div>
                             </div>
                         </div>

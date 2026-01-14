@@ -105,7 +105,7 @@ class ProcurementService
                 'status' => 'draft',
                 'terms_conditions' => $additionalData['terms_conditions'] ?? $quotation->terms_conditions,
                 'delivery_address' => $additionalData['delivery_address'] ?? null,
-                'created_by' => auth()->id(),
+                'created_by' => $quotation->created_by ?? auth()->id(), // Use quotation creator, fallback to current user
                 ...$additionalData,
             ]);
 
