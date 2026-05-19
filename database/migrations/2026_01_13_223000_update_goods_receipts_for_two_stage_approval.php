@@ -14,8 +14,18 @@ return new class extends Migration
     {
         Schema::table('goods_receipts', function (Blueprint $table) {
             // Add new status 'warehouse_approved' to enum
-            DB::statement("ALTER TABLE goods_receipts MODIFY COLUMN status ENUM('draft', 'pending', 'warehouse_approved', 'approved', 'rejected', 'cancelled') DEFAULT 'draft'");
-            
+            \DB::statement("
+                DO \$\$
+                DECLARE
+                    constraint_name TEXT;
+                BEGIN
+                    SELECT conname INTO constraint_name FROM pg_constraint c JOIN pg_class t ON c.conrelid = t.oid JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(c.conkey) WHERE t.relname = 'goods_receipts' AND a.attname = 'status' AND c.contype = 'c' LIMIT 1;
+                    IF constraint_name IS NOT NULL THEN
+                        EXECUTE 'ALTER TABLE goods_receipts DROP CONSTRAINT ' || quote_ident(constraint_name);
+                    END IF;
+                    ALTER TABLE goods_receipts ADD CONSTRAINT goods_receipts_status_check CHECK (status::text = ANY (ARRAY['draft'::text, 'pending'::text, 'warehouse_approved'::text, 'approved'::text, 'rejected'::text, 'cancelled'::text]));
+                END \$\$;
+            ");
             // Add inventory manager approval fields
             $table->foreignId('warehouse_approved_by')->nullable()->after('approved_by')->constrained('users')->onDelete('set null');
             $table->timestamp('warehouse_approved_at')->nullable()->after('approved_at');
@@ -36,7 +46,17 @@ return new class extends Migration
             $table->dropColumn(['warehouse_approved_by', 'warehouse_approved_at', 'inventory_approved_by', 'inventory_approved_at', 'inventory_feedback']);
             
             // Revert status enum
-            DB::statement("ALTER TABLE goods_receipts MODIFY COLUMN status ENUM('draft', 'pending', 'approved', 'rejected', 'cancelled') DEFAULT 'draft'");
-        });
+            \DB::statement("
+                DO \$\$
+                DECLARE
+                    constraint_name TEXT;
+                BEGIN
+                    SELECT conname INTO constraint_name FROM pg_constraint c JOIN pg_class t ON c.conrelid = t.oid JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(c.conkey) WHERE t.relname = 'goods_receipts' AND a.attname = 'status' AND c.contype = 'c' LIMIT 1;
+                    IF constraint_name IS NOT NULL THEN
+                        EXECUTE 'ALTER TABLE goods_receipts DROP CONSTRAINT ' || quote_ident(constraint_name);
+                    END IF;
+                    ALTER TABLE goods_receipts ADD CONSTRAINT goods_receipts_status_check CHECK (status::text = ANY (ARRAY['draft'::text, 'pending'::text, 'approved'::text, 'rejected'::text, 'cancelled'::text]));
+                END \$\$;
+            ");        });
     }
 };
